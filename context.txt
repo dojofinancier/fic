@@ -1,0 +1,187 @@
+# Full Conversation Log - Le Dojo Financier Payment Issue Debug
+
+## Initial Problem Report
+**User reported:** Error message "Erreur serveur: 400 - {"error":"Invalid Stripe API version: 2024-11-20"}"
+
+**Console logs showed:**
+```
+StripePaymentForm.tsx:132 👤 Utilisateur non connecté, création du compte...
+StripePaymentForm.tsx:73 🔐 Création du compte utilisateur...
+AuthContext.tsx:209 AuthProvider: Register attempt for: jesus@hotmail.com with name: Jesus DeNazareth
+AuthContext.tsx:61 AuthProvider: Auth state changed: SIGNED_IN
+AuthContext.tsx:63 AuthProvider: User in auth state change, fetching profile...
+AuthContext.tsx:76 AuthProvider: Fetching user profile for: 21ef1b20-cc3c-4a8f-ad54-b44583af6b1d
+AuthContext.tsx:84 AuthProvider: Querying users table...
+AuthContext.tsx:93 AuthProvider: Waiting for query result...
+GET https://vjzpsrncgzscavxwrpsk.supabase.co/rest/v1/users?select=*&id=eq.21ef1b20-cc3c-4a8f-ad54-b44583af6b1d 406 (Not Acceptable)
+```
+
+## Problem Analysis
+1. ✅ Account creation successful in auth.users
+2. ✅ Order creation successful in Supabase
+3. ❌ Edge Function call failing with CORS error
+4. ❌ User redirected to empty cart instead of dashboard
+
+## First Fix Attempt - CORS Headers
+**Issue:** Edge Function had incorrect CORS headers
+**Solution:** Updated both create-payment-intent and stripe-webhook functions with proper CORS headers
+
+**Changes made:**
+- Added proper Access-Control-Allow-Methods headers
+- Added explicit OPTIONS request handling
+- Added detailed logging with emojis for easier debugging
+
+## Second Fix Attempt - Stripe API Version
+**Issue:** Invalid Stripe API version "2024-11-20"
+**Solution:** Updated to supported version "2023-10-16"
+
+**User feedback:** "the create-payment-intent function worked according to supabase logs but there is no log for the stripe-webhook function"
+
+## Third Issue - Webhook Not Triggering
+**Problem identified:**
+1. create-payment-intent function working ✅
+2. Payment successful (user redirected to empty cart) ✅
+3. stripe-webhook function not triggering ❌
+4. User doesn't get access (webhook didn't update has_access) ❌
+
+**Potential causes discussed:**
+1. Webhook not configured in Stripe Dashboard
+2. Missing webhook signing secret
+3. Function not deployed properly
+
+**User confirmed:** "the webhook is configured properly in stripe and in supabase"
+
+## Fourth Issue - Supabase Query Syntax Error
+**New error discovered:**
+```
+AuthProvider: Querying users table...
+AuthProvider: Waiting for query result...
+GET https://vjzpsrncgzscavxwrpsk.supabase.co/rest/v1/users?select=*&id=eq.c30d299c-fe29-46e9-a791-404290f1e8cb
+```
+
+**Problem:** Incorrect Supabase query syntax causing 406 errors
+
+## Fifth Issue - Timeout Error
+**New error:**
+```
+Uncaught (in promise) Error: Timeout: La requête a pris trop de temps
+    at AuthContext.tsx:80:31
+```
+
+**Problem:** Artificial timeout of 5 seconds was too short for Supabase operations
+
+## Final Diagnosis
+**Root cause identified:**
+1. PGRST116 error with status 406 indicates no user found with that ID
+2. Timeout was artificially imposed and too short
+3. .single() syntax was causing errors when no results found
+4. User profile not being created properly in public.users table
+
+## Solutions Implemented
+
+### 1. CORS Headers Fix
+```typescript
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+```
+
+### 2. Stripe API Version Update
+```typescript
+const stripe = new Stripe(stripeApiKey, {
+  apiVersion: '2023-10-16', // Changed from '2024-11-20'
+  httpClient: Stripe.createFetchHttpClient(),
+})
+```
+
+### 3. Supabase Query Syntax Fix
+**Before:**
+```typescript
+const { data: userProfile, error } = await Promise.race([
+  supabase.from('users').select('*').eq('id', supabaseUser.id),
+  new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+]);
+```
+
+**After:**
+```typescript
+const { data: userProfile, error } = await supabase
+  .from('users')
+  .select('*')
+  .eq('id', supabaseUser.id);
+```
+
+### 4. Error Handling Improvement
+- Removed artificial timeouts
+- Added fallback user profiles
+- Improved error logging
+- Better handling of PGRST116 errors
+
+### 5. Payment Flow Enhancement
+- Better verification of user access after payment
+- Improved retry logic for webhook processing
+- More specific error messages with order IDs
+
+## Technical Details
+
+### Edge Functions Created:
+1. **create-payment-intent** - Creates Stripe PaymentIntent
+2. **stripe-webhook** - Handles Stripe webhook events
+
+### Database Tables:
+- users (extended profiles)
+- questions (quiz content)
+- flashcards (study cards)
+- quiz_results (user progress)
+- orders (purchase orders)
+- payments (payment history)
+- coupons (discount codes)
+
+### Key Features:
+- User authentication with Supabase Auth
+- Stripe payment processing
+- Quiz and flashcard management
+- Admin panel for content management
+- Coupon system for discounts
+
+## Current Status
+**Expected behavior after fixes:**
+1. User creates account during checkout ✅
+2. User profile created in public.users table ✅
+3. Payment processed by Stripe ✅
+4. Webhook updates user access ✅
+5. User redirected to dashboard ✅
+
+**Files modified during debugging:**
+- src/contexts/AuthContext.tsx (query syntax fixes)
+- src/components/checkout/StripePaymentForm.tsx (payment flow)
+- supabase/functions/create-payment-intent/index.ts (CORS + API version)
+- supabase/functions/stripe-webhook/index.ts (CORS + API version)
+
+## Next Steps for User
+1. Test payment with card 4242 4242 4242 4242
+2. Check console logs for PGRST116 errors (should be resolved)
+3. Verify webhook logs in Supabase Edge Functions
+4. Check Stripe Dashboard → Webhooks → Recent deliveries
+
+## Configuration Requirements
+**Supabase Edge Functions Environment Variables:**
+
+create-payment-intent:
+```
+STRIPE_API_KEY=sk_test_your_secret_key
+```
+
+stripe-webhook:
+```
+STRIPE_API_KEY=sk_test_your_secret_key
+STRIPE_WEBHOOK_SIGNING_SECRET=whsec_your_webhook_secret
+```
+
+**Stripe Webhook Configuration:**
+- URL: https://vjzpsrncgzscavxwrpsk.supabase.co/functions/v1/stripe-webhook
+- Events: payment_intent.succeeded, payment_intent.payment_failed
+
+## End of Conversation Log
