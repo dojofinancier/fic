@@ -14,26 +14,25 @@ export const Footer: React.FC = () => {
               />
             </div>
             <p className="text-gray-300 max-w-md">
-              Maîtrisez l'examen FIC avec notre plateforme d'apprentissage complète. 
-              Quiz interactifs, examens pratiques et tutorat IA pour assurer votre succès.
+              Maîtrisez l'examen des fonds d'investissement au Canada (FIC) avec notre plateforme d'apprentissage complète. 
+              Quiz interactifs, examens pratiques et tutorat virtuel pour assurer votre succès.
             </p>
           </div>
           
           <div>
             <h3 className="font-semibold mb-4">Fonctionnalités</h3>
             <ul className="space-y-2 text-gray-300">
-              <li>Quiz par chapitre</li>
-              <li>Examens pratiques</li>
-              <li>Cartes mémoire</li>
-              <li>Tutorat IA</li>
-              <li>Plans d'étude</li>
+              <li>Quiz et examens pratiques</li>
+              <li>Notes d'étude</li>
+              <li>Flashcards</li>
+              <li>Tutorat virtuel</li>
             </ul>
           </div>
           
           <div>
             <h3 className="font-semibold mb-4">Support</h3>
             <ul className="space-y-2 text-gray-300">
-              <li>Centre d'aide</li>
+              <li>À propos</li>
               <li>Nous contacter</li>
               <li>Politique de confidentialité</li>
               <li>Conditions d'utilisation</li>

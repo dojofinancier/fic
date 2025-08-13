@@ -44,17 +44,41 @@ export const useFlashcardData = () => {
     try {
       setError(null);
 
-      const flashcardsToInsert = newFlashcards.map(flashcard => ({
-        id: flashcard.id,
-        front: flashcard.front,
-        back: flashcard.back,
-        chapter: flashcard.chapter,
-        category: flashcard.category
-      }));
+      // First, get existing flashcard IDs to check for duplicates
+      const { data: existingFlashcards, error: fetchError } = await supabase
+        .from('flashcards')
+        .select('id');
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const existingIds = new Set(existingFlashcards?.map(f => f.id) || []);
+
+      // Process flashcards, generating new IDs for duplicates
+      const flashcardsToInsert = newFlashcards.map(flashcard => {
+        let finalId = flashcard.id;
+        
+        // If this ID already exists, generate a new unique ID
+        if (existingIds.has(flashcard.id)) {
+          const timestamp = Date.now();
+          const randomSuffix = Math.random().toString(36).substring(2, 8);
+          finalId = `${flashcard.id}_${timestamp}_${randomSuffix}`;
+          console.log(`Flashcard ID ${flashcard.id} already exists, using new ID: ${finalId}`);
+        }
+
+        return {
+          id: finalId,
+          front: flashcard.front,
+          back: flashcard.back,
+          chapter: flashcard.chapter,
+          category: flashcard.category
+        };
+      });
 
       const { data, error: supabaseError } = await supabase
         .from('flashcards')
-        .upsert(flashcardsToInsert)
+        .insert(flashcardsToInsert)
         .select();
 
       if (supabaseError) {

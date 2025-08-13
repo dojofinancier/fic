@@ -104,19 +104,37 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addQuestions = async (newQuestions: Question[]) => {
     try {
-      const questionsToInsert = newQuestions.map(q => ({
-        id: q.id,
-        question: q.question,
-        options: q.options,
-        correct_answer: q.correctAnswer,
-        explanation: q.explanation,
-        chapter: q.chapter,
-        type: q.type || 'quiz'
-      }));
+      // Fetch existing IDs to avoid overwriting, and insert new rows only
+      const incomingIds = newQuestions.map(q => q.id);
+      const { data: existing, error: fetchErr } = await supabase
+        .from('questions')
+        .select('id')
+        .in('id', incomingIds);
+      if (fetchErr) throw fetchErr;
+      const existingIdSet = new Set((existing || []).map((r: any) => r.id));
+
+      const generateSuffix = () => Math.random().toString(36).slice(2, 8);
+
+      const questionsToInsert = newQuestions.map(q => {
+        let newId = q.id;
+        if (existingIdSet.has(newId)) {
+          // Create a new unique id to append instead of overwriting
+          newId = `${q.chapter}-${Date.now()}-${generateSuffix()}`;
+        }
+        return {
+          id: newId,
+          question: q.question,
+          options: q.options,
+          correct_answer: q.correctAnswer,
+          explanation: q.explanation,
+          chapter: q.chapter,
+          type: q.type || 'quiz'
+        };
+      });
 
       const { error } = await supabase
         .from('questions')
-        .upsert(questionsToInsert);
+        .insert(questionsToInsert);
 
       if (error) throw error;
 
@@ -141,19 +159,25 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return acc;
     }, {} as Record<string, Question[]>);
 
-    // Créer des quiz pour chaque groupe
+    // Créer des quiz pour chaque groupe (un seul quiz par chapitre pour type=quiz)
     Object.entries(questionsByChapter).forEach(([key, chapterQuestions]) => {
       const [chapterStr, type] = key.split('-');
       const chapter = parseInt(chapterStr);
       
       if ((type === 'quiz' || !type) && chapter > 0) {
-        generatedQuizzes.push({
-          id: `quiz-chapter-${chapter}`,
-          title: `Chapitre ${chapter} : Quiz`,
-          chapter,
-          type: 'quiz',
-          questions: chapterQuestions
-        });
+        // Merge: ensure single quiz per chapter; if exists, append
+        const existing = generatedQuizzes.find(q => q.type === 'quiz' && q.chapter === chapter);
+        if (existing) {
+          existing.questions = [...existing.questions, ...chapterQuestions];
+        } else {
+          generatedQuizzes.push({
+            id: `quiz-chapter-${chapter}`,
+            title: `Chapitre ${chapter} : Quiz`,
+            chapter,
+            type: 'quiz',
+            questions: chapterQuestions
+          });
+        }
       } else if (type === 'exam') {
         generatedQuizzes.push({
           id: `exam-practice-${Date.now()}`,

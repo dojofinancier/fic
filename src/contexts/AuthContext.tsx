@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -35,154 +35,143 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const isInitialized = useRef(false);
+  const profileFetchInProgress = useRef(false);
   
   console.log('AuthProvider: Component initialized');
 
-  useEffect(() => {
-    console.log('AuthProvider: useEffect triggered');
-    // Vérifier la session existante
-    const getSession = async () => {
-      console.log('AuthProvider: Getting session...');
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('AuthProvider: Session data:', session);
-      if (session?.user) {
-        console.log('AuthProvider: User found in session, fetching profile...');
-        await fetchUserProfile(session.user);
-      } else {
-        console.log('AuthProvider: No user in session');
-      }
-      setLoading(false);
-      console.log('AuthProvider: Loading set to false');
-    };
+  // Simplified profile fetching without complex retry logic
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    if (profileFetchInProgress.current) {
+      console.log('AuthProvider: Profile fetch already in progress, skipping');
+      return null;
+    }
 
-    getSession();
-
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthProvider: Auth state changed:', event, session);
-      if (session?.user) {
-        console.log('AuthProvider: User in auth state change, fetching profile...');
-        await fetchUserProfile(session.user);
-      } else {
-        console.log('AuthProvider: No user in auth state change');
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+    profileFetchInProgress.current = true;
     console.log('AuthProvider: Fetching user profile for:', supabaseUser.id);
-    const timeoutMs = 12000; // Allow more time to avoid transient timeouts
-    const runOnce = async (): Promise<User | null> => {
-      console.log('AuthProvider: Querying users table...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      try {
-        const { data, error } = await supabase
+
+    try {
+      // Simple query with 5 second timeout
+      const { data, error } = await Promise.race([
+        supabase
           .from('users')
           .select('id,email,name,has_access,is_admin,access_expires_at')
           .eq('id', supabaseUser.id)
-          .maybeSingle({ head: false, count: 'exact' });
-        clearTimeout(timeoutId);
-        if (error) throw error;
-        if (!data) return null;
-        const profile: User = {
-          id: data.id,
-          email: data.email,
-          name: data.name,
-          hasAccess: data.has_access,
-          isAdmin: data.is_admin || false,
-          accessExpiresAt: data.access_expires_at ? new Date(data.access_expires_at) : undefined,
-        };
-        // Cache last successful profile to localStorage
-        try { localStorage.setItem('df_user_profile', JSON.stringify(profile)); } catch {}
-        return profile;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        console.error('AuthProvider: Error querying users table:', err);
+          .maybeSingle(),
+        new Promise<{ data: null; error: { message: string } }>((resolve) => 
+          setTimeout(() => resolve({ data: null, error: { message: 'Query timeout' } }), 5000)
+        )
+      ]);
+
+      if (error) {
+        console.error('AuthProvider: Error querying users table:', error);
         return null;
       }
-    };
 
-    try {
-      // Try up to two attempts before fallback (handles cold starts)
-      let profile = await runOnce();
-      if (!profile) {
-        await new Promise(r => setTimeout(r, 800));
-        profile = await runOnce();
-      }
-
-      if (profile) {
-        console.log('AuthProvider: Setting user from database:', profile);
-        setUser(profile);
-        return;
-      }
-
-      // If not found, create it
-      console.log('AuthProvider: User profile not found, creating new profile...');
-        // Profil pas trouvé, le créer
-      const newUserData = {
-        id: supabaseUser.id,
-        email: supabaseUser.email!,
-        name: supabaseUser.user_metadata?.name || supabaseUser.email!.split('@')[0],
-        has_access: false,
-        is_admin: false
-      };
-
-      console.log('AuthProvider: Inserting new user profile:', newUserData);
-      const { data: insertedUser, error: insertError } = await supabase
-        .from('users')
-        .upsert(newUserData)
-        .select()
-        .single();
-
-      console.log('AuthProvider: Insert result:', { insertedUser, insertError });
-      if (insertError) throw insertError;
-
-      if (insertedUser) {
-        const profileCreated: User = {
-          id: insertedUser.id,
-          email: insertedUser.email,
-          name: insertedUser.name,
-          hasAccess: insertedUser.has_access,
-          isAdmin: insertedUser.is_admin || false,
-          accessExpiresAt: insertedUser.access_expires_at ? new Date(insertedUser.access_expires_at) : undefined
-        };
-        try { localStorage.setItem('df_user_profile', JSON.stringify(profileCreated)); } catch {}
-        console.log('AuthProvider: Setting newly created user:', profileCreated);
-        setUser(profileCreated);
-        return;
-      }
-      console.log('AuthProvider: Profile fetch completed successfully');
-    } catch (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
-
-      // En cas d'erreur/timeout, si un profil est en cache, l'utiliser
-      try {
-        const cached = localStorage.getItem('df_user_profile');
-        if (cached) {
-          const parsed = JSON.parse(cached) as User;
-          console.log('AuthProvider: Using cached user profile');
-          setUser(parsed);
-          return;
-        }
-      } catch {}
-      // Sinon, ne pas invalider la session: conserver l'état actuel si déjà défini
-      if (!user) {
-        console.log('AuthProvider: Using minimal fallback profile due to error/timeout');
-        setUser({
+      if (!data) {
+        console.log('AuthProvider: No user profile found, creating new one...');
+        // Create new user profile
+        const newUserData = {
           id: supabaseUser.id,
           email: supabaseUser.email!,
           name: supabaseUser.user_metadata?.name || supabaseUser.email!.split('@')[0],
-          hasAccess: false,
-          isAdmin: false
-        });
+          has_access: false,
+          is_admin: false
+        };
+
+        const { data: insertedUser, error: insertError } = await supabase
+          .from('users')
+          .upsert(newUserData)
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('AuthProvider: Error creating user profile:', insertError);
+          return null;
+        }
+
+        if (insertedUser) {
+          return {
+            id: insertedUser.id,
+            email: insertedUser.email,
+            name: insertedUser.name,
+            hasAccess: insertedUser.has_access,
+            isAdmin: insertedUser.is_admin || false,
+            accessExpiresAt: insertedUser.access_expires_at ? new Date(insertedUser.access_expires_at) : undefined
+          };
+        }
+        return null;
       }
+
+      // Return existing user profile
+      return {
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        hasAccess: data.has_access,
+        isAdmin: data.is_admin || false,
+        accessExpiresAt: data.access_expires_at ? new Date(data.access_expires_at) : undefined,
+      };
+
+    } catch (error) {
+      console.error('AuthProvider: Unexpected error in fetchUserProfile:', error);
+      return null;
+    } finally {
+      profileFetchInProgress.current = false;
     }
   };
+
+  // Initialize authentication state
+  useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    console.log('AuthProvider: Initializing authentication state');
+
+    const initializeAuth = async () => {
+      try {
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('AuthProvider: Current session:', session ? 'exists' : 'none');
+
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user);
+          if (profile) {
+            console.log('AuthProvider: Setting user from session:', profile);
+            setUser(profile);
+          }
+        }
+      } catch (error) {
+        console.error('AuthProvider: Error during initialization:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('AuthProvider: Auth state changed:', event, session ? 'with user' : 'no user');
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await fetchUserProfile(session.user);
+        if (profile) {
+          console.log('AuthProvider: Setting user from auth change:', profile);
+          setUser(profile);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('AuthProvider: User signed out');
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     console.log('AuthProvider: Login attempt for:', email);
@@ -191,8 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       password
     });
-
-    console.log('AuthProvider: Login result:', { error });
 
     if (error) {
       console.error('AuthProvider: Login error:', error);
@@ -211,43 +198,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: {
         data: {
           name: name
-        },
-        emailRedirectTo: undefined // Éviter les redirections automatiques
+        }
       }
     });
 
-    console.log('AuthProvider: Register result:', { data, error });
-
     if (error) {
-      console.error('Registration error:', error);
+      console.error('AuthProvider: Registration error:', error);
       throw new Error(error.message);
     }
 
-    console.log('Registration successful, user should be automatically signed in');
-    // L'utilisateur est automatiquement connecté après inscription avec Supabase
-    // Le onAuthStateChange va se déclencher automatiquement
+    console.log('AuthProvider: Registration successful');
   };
 
   const refreshUserProfile = async () => {
     console.log('AuthProvider: Refreshing user profile...');
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      await fetchUserProfile(session.user);
+      const profile = await fetchUserProfile(session.user);
+      if (profile) {
+        setUser(profile);
+      }
     }
   };
 
   const logout = async () => {
     console.log('AuthProvider: Logout attempt');
+    
     const { error } = await supabase.auth.signOut();
     if (error) {
       console.error('AuthProvider: Logout error:', error);
       throw new Error(error.message);
     }
+    
     console.log('AuthProvider: Logout successful');
     setUser(null);
   };
 
-  console.log('AuthProvider: Current state - user:', user, 'loading:', loading);
+  console.log('AuthProvider: Current state - user:', user ? 'exists' : 'null', 'loading:', loading);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUserProfile }}>

@@ -9,9 +9,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,        // keep session in localStorage
-    autoRefreshToken: true,      // refresh access token automatically
-    detectSessionInUrl: true     // handle redirects if you ever use magic links
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'df_auth_token'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'df-web-app'
+    }
   }
 });
 

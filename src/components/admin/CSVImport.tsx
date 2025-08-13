@@ -115,7 +115,7 @@ export const CSVImport: React.FC<CSVImportProps> = ({ type, onImportComplete }) 
             <h4 className="font-medium text-[#3b3b3b] mb-2">Format requis :</h4>
             {type === 'questions' ? (
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• <strong>id</strong> : Identifiant unique</li>
+                 <li>• <strong>id</strong> : Identifiant unique (facultatif, sera généré si dupliqué)</li>
                 <li>• <strong>question</strong> : Texte de la question</li>
                 <li>• <strong>option1-4</strong> : Les 4 options de réponse</li>
                 <li>• <strong>correctAnswer</strong> : Numéro de la bonne réponse (1-4)</li>

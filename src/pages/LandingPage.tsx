@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCart } from '../contexts/CartContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { 
@@ -9,28 +8,17 @@ import {
   Brain, 
   MessageCircle, 
   Calendar, 
-  Trophy,
+  FileText,
   CheckCircle,
   Star,
-  Users
+  Users,
+  Trophy,
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { addItem } = useCart();
-
   const handleGetStarted = () => {
-    // Ajouter le produit au panier
-    addItem({
-      id: 'full-access',
-      name: 'Plan d\'accès complet',
-      description: 'Accès complet à tous les outils d\'apprentissage FIC',
-      price: 197,
-      quantity: 1
-    });
-    
-    // Rediriger vers le panier
-    navigate('/cart');
+    navigate('/pricing');
   };
 
   const features = [
@@ -41,18 +29,18 @@ export const LandingPage: React.FC = () => {
     },
     {
       icon: Clock,
-      title: 'Examens pratiques chronométrés',
+      title: 'Examens pratiques',
       description: 'Simulez l\'environnement d\'examen réel avec des tests pratiques chronométrés pour améliorer votre gestion du temps.'
     },
     {
       icon: Brain,
-      title: 'Cartes mémoire intelligentes',
+      title: 'Cartes mémoire (flashcards)',
       description: 'Cartes recto-verso avec questions et explications détaillées pour une mémorisation efficace.'
     },
     {
       icon: MessageCircle,
-      title: 'Tutorat IA',
-      description: 'Obtenez de l\'aide instantanée et des explications de notre tuteur virtuel alimenté par l\'IA, disponible 24h/24 et 7j/7.'
+      title: 'Tutorat Virtuel',
+      description: 'Obtenez de l\'aide instantanée et des explications de notre tuteur virtuel, disponible 24h/24 et 7j/7.'
     },
     {
       icon: Calendar,
@@ -60,16 +48,16 @@ export const LandingPage: React.FC = () => {
       description: 'Plans d\'étude personnalisables et téléchargeables pour vous garder organisé et sur la bonne voie.'
     },
     {
-      icon: Trophy,
-      title: 'Suivi des progrès',
-      description: 'Surveillez votre parcours d\'apprentissage avec des rapports de progrès détaillés et des analyses de performance.'
+      icon: FileText,
+      title: 'Notes d\'étude',
+      description: 'Notes d\'étude courtes et concises pour vous aider à réviser le matériel.'
     }
   ];
 
   const benefits = [
     'Préparation complète à l\'examen FIC',
     'Outils d\'apprentissage interactifs',
-    'Support de tutorat alimenté par l\'IA',
+    'Support de tutorat 24/7',
     'Suivi des progrès et analyses',
     'Accès d\'un an à tout le matériel',
     'Plateforme compatible mobile'
@@ -85,7 +73,7 @@ export const LandingPage: React.FC = () => {
     {
       name: 'Jean Tremblay',
       role: 'Consultant en investissement',
-      content: 'La fonction de tutorat IA a tout changé. Avoir des explications instantanées disponibles a rendu l\'étude beaucoup plus efficace.',
+      content: 'La fonction de tutorat virtuel a tout changé. Avoir des explications instantanées disponibles a rendu l\'étude beaucoup plus efficace.',
       rating: 5
     },
     {
@@ -104,12 +92,12 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-6">
-                Maîtrisez l'examen FIC avec 
-                <span className="block text-white/90">Le Dojo Financier</span>
+                Maîtrisez l'examen Fonds d'investissement au Canada (FIC)
+                <span className="block text-white/90"></span>
               </h1>
               <p className="text-xl lg:text-2xl text-white/90 mb-8 leading-relaxed">
-                Plateforme d'apprentissage complète conçue spécifiquement pour le succès à l'examen des Fonds d'investissement canadiens. 
-                Quiz interactifs, tutorat IA et méthodes d'étude éprouvées.
+                Plateforme d'apprentissage complète conçue spécifiquement pour le succès à l'examen FIC du CSI. 
+                Quiz interactifs, examens pratiques, tutorat virtuel et méthodes d'étude éprouvées.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="secondary" size="lg" className="w-full sm:w-auto" onClick={handleGetStarted}>
@@ -117,7 +105,7 @@ export const LandingPage: React.FC = () => {
                 </Button>
                 <Link to="/login">
                   <Button variant="outline" size="lg" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-[#10ac69]">
-                    Connexion
+                    Me connecter
                   </Button>
                 </Link>
               </div>
@@ -144,7 +132,7 @@ export const LandingPage: React.FC = () => {
               Tout ce dont vous avez besoin pour réussir
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Notre plateforme complète fournit tous les outils et ressources dont vous avez besoin pour maîtriser le matériel d'examen FIC.
+              Notre plateforme complète fournit tous les outils et ressources dont vous avez besoin pour maîtriser le matériel d'examen.
             </p>
           </div>
           
@@ -166,11 +154,11 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold text-[#3b3b3b] mb-6">
-                Pourquoi choisir Le Dojo Financier ?
+                Pourquoi choisir Le Dojo Financier?
               </h2>
               <p className="text-xl text-gray-600 mb-8">
-                Nous avons conçu notre plateforme spécifiquement pour les candidats à l'examen FIC, 
-                combinant des méthodes d'apprentissage éprouvées avec une technologie de pointe.
+                Nous avons conçu notre plateforme spécifiquement pour les candidats à l'examen des fonds d'investissement au Canada (FIC) offert par le CSI, 
+                en utilisant nos 15 ans d'expérience dans la formation financière.
               </p>
               <ul className="space-y-4">
                 {benefits.map((benefit, index) => (
@@ -189,15 +177,15 @@ export const LandingPage: React.FC = () => {
                     <div className="text-gray-600">Questions pratiques</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#10ac69] mb-2">15</div>
-                    <div className="text-gray-600">Chapitres d'étude</div>
+                    <div className="text-3xl font-bold text-[#10ac69] mb-2">2</div>
+                    <div className="text-gray-600">Examens pratiques</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-[#10ac69] mb-2">24/7</div>
-                    <div className="text-gray-600">Support IA</div>
+                    <div className="text-gray-600">Support virtuel</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold text-[#10ac69] mb-2">94%</div>
+                    <div className="text-3xl font-bold text-[#10ac69] mb-2">92%</div>
                     <div className="text-gray-600">Taux de réussite</div>
                   </div>
                 </div>
@@ -215,7 +203,7 @@ export const LandingPage: React.FC = () => {
               Ce que disent nos étudiants
             </h2>
             <p className="text-xl text-gray-600">
-              Rejoignez des milliers de candidats FIC qui ont réussi
+              Rejoignez des centaines de candidats FIC qui ont réussi
             </p>
           </div>
           
@@ -242,10 +230,10 @@ export const LandingPage: React.FC = () => {
       <section className="py-20 bg-[#10ac69]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
-            Prêt à réussir votre examen FIC ?
+            Prêt à réussir votre examen?
           </h2>
           <p className="text-xl text-white/90 mb-8">
-            Rejoignez des milliers de candidats qui ont choisi Le Dojo Financier pour leur préparation d'examen.
+            Rejoignez des centaines de candidats qui ont choisi Le Dojo Financier pour leur préparation d'examen.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="secondary" size="lg" className="w-full sm:w-auto" onClick={handleGetStarted}>
@@ -253,7 +241,7 @@ export const LandingPage: React.FC = () => {
             </Button>
             <div className="flex items-center justify-center space-x-2 text-white/90">
               <Users className="h-5 w-5" />
-              <span>Rejoignez plus de 5 000 étudiants qui ont réussi</span>
+              <span>Rejoignez plus de 500 étudiants qui ont réussi</span>
             </div>
           </div>
         </div>

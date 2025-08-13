@@ -44,16 +44,7 @@ export const Header: React.FC = () => {
                     </Button>
                   </Link>
                 )}
-                <Link to="/cart" className="relative">
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                    <ShoppingCart className="h-5 w-5" />
-                    {items.length > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {items.length}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
+
                 {user.hasAccess && (
                   <Link to="/dashboard" className="sm:hidden">
                     <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 p-2">
@@ -78,7 +69,7 @@ export const Header: React.FC = () => {
               <>
                 <Link to="/login" className="hidden sm:block">
                   <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
-                    Connexion
+                    Mon compte
                   </Button>
                 </Link>
                 <Link to="/login" className="sm:hidden">
