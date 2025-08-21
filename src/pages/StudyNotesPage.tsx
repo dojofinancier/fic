@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { supabase } from '../lib/supabase';
+import { studyNotes } from '../data/studyContent';
+import { downloadStudyNotesPDF, downloadAllStudyNotesPDF } from '../utils/pdfGenerator';
 import { 
   BookOpen, 
   Download, 
@@ -13,33 +14,16 @@ import {
 
 export const StudyNotesPage: React.FC = () => {
   const [selectedChapter, setSelectedChapter] = useState<number>(1);
-  const [notesByChapter, setNotesByChapter] = useState<Record<number, { title: string; sections: { title: string; points: string[] }[]; pdfUrl?: string }>>({});
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.from('study_notes').select('*');
-      const mapped: Record<number, any> = {};
-      (data || []).forEach((n: any) => {
-        const pdfUrl = n.pdf_path ? supabase.storage.from('study-assets').getPublicUrl(n.pdf_path).data.publicUrl : undefined;
-        mapped[n.chapter] = { title: n.title, sections: n.sections || [], pdfUrl };
-      });
-      setNotesByChapter(mapped);
-    };
-    load();
-  }, []);
+  const currentNotes = studyNotes[selectedChapter];
 
-  const downloadChapterNotes = (chapter: number) => {
-    const entry = notesByChapter[chapter];
-    if (!entry?.pdfUrl) return;
-    const link = document.createElement('a');
-    link.href = entry.pdfUrl;
-    link.download = `Notes-Chapitre-${chapter}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownloadPDF = async () => {
+    await downloadStudyNotesPDF(currentNotes);
   };
 
-  const currentNotes = notesByChapter[selectedChapter];
+  const handleDownloadAllPDF = async () => {
+    await downloadAllStudyNotesPDF(studyNotes);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -58,18 +42,18 @@ export const StudyNotesPage: React.FC = () => {
             <Card className="sticky top-8">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-semibold text-[#3b3b3b]">Chapitres</h2>
-                <Button size="sm" disabled>
+                <Button size="sm" onClick={handleDownloadAllPDF}>
                   <Download className="h-4 w-4 mr-1" />
                   Tout
                 </Button>
               </div>
-              <div className="space-y-1 max-h-96 overflow-y-auto">
+              <div className="space-y-1">
                 <div className="space-y-1">
                   {Array.from({ length: 18 }, (_, i) => i + 1).map((chapter) => (
                     <button
                       key={chapter}
                       onClick={() => setSelectedChapter(chapter)}
-                      className={`w-full text-left p-3 rounded-lg transition-all duration-200 flex items-center justify-between ${
+                      className={`w-full text-left p-2 rounded-lg transition-all duration-200 flex items-center justify-between ${
                         selectedChapter === chapter
                           ? 'bg-[#10ac69] text-white'
                           : 'hover:bg-gray-100 text-gray-700'
@@ -95,7 +79,7 @@ export const StudyNotesPage: React.FC = () => {
                     </h2>
                     <h3 className="text-xl text-gray-600">{currentNotes.title}</h3>
                   </div>
-                  <Button onClick={() => downloadChapterNotes(selectedChapter)}>
+                  <Button onClick={handleDownloadPDF}>
                     <Download className="h-4 w-4 mr-2" />
                     PDF
                   </Button>
@@ -106,15 +90,38 @@ export const StudyNotesPage: React.FC = () => {
                     <div key={sectionIndex} className="border-l-4 border-[#10ac69] pl-6">
                       <h4 className="text-lg font-semibold text-[#3b3b3b] mb-4 flex items-center">
                         <Target className="h-5 w-5 text-[#10ac69] mr-2" />
-                        {section.title}
+                        <span dangerouslySetInnerHTML={{ __html: section.title }}></span>
                       </h4>
                       <ul className="space-y-3">
-                        {section.points.map((point, pointIndex) => (
-                          <li key={pointIndex} className="flex items-start space-x-3">
-                            <div className="w-2 h-2 bg-[#10ac69] rounded-full mt-2 flex-shrink-0"></div>
-                            <span className="text-gray-700 leading-relaxed">{point}</span>
-                          </li>
-                        ))}
+                        {section.points.map((point, pointIndex) => {
+                          // Check if point contains nested items (has \n    •)
+                          if (point.includes('\n    • ')) {
+                            const [mainPoint, ...nestedPoints] = point.split('\n    • ');
+                            return (
+                              <li key={pointIndex} className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-[#10ac69] rounded-full mt-2 flex-shrink-0"></div>
+                                <div className="text-gray-700 leading-relaxed">
+                                  <span dangerouslySetInnerHTML={{ __html: mainPoint }}></span>
+                                  <ul className="mt-2 ml-4 space-y-1">
+                                    {nestedPoints.map((nestedPoint, nestedIndex) => (
+                                      <li key={nestedIndex} className="text-sm text-gray-600 flex items-start">
+                                        <span className="text-[#10ac69] mr-2 mt-1">•</span>
+                                        <span dangerouslySetInnerHTML={{ __html: nestedPoint }}></span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </li>
+                            );
+                          } else {
+                            return (
+                              <li key={pointIndex} className="flex items-start space-x-3">
+                                <div className="w-2 h-2 bg-[#10ac69] rounded-full mt-2 flex-shrink-0"></div>
+                                <span className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: point }}></span>
+                              </li>
+                            );
+                          }
+                        })}
                       </ul>
                     </div>
                   ))}

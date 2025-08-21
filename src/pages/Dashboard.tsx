@@ -233,7 +233,7 @@ export const Dashboard: React.FC = () => {
               <Link to="/ai-tutor">
                 <Card hover className="text-center">
                   <MessageCircle className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Tuteur IA</h3>
+                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Tuteur Virtuel</h3>
                   <p className="text-gray-600 text-sm">Obtenez de l'aide et des explications instantanées</p>
                 </Card>
               </Link>

@@ -18,6 +18,10 @@ import { PracticeExamsPage } from './pages/PracticeExamsPage';
 import { FlashcardsPage } from './pages/FlashcardsPage';
 import { StudyPlansPage } from './pages/StudyPlansPage';
 import { StudyNotesPage } from './pages/StudyNotesPage';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
+import { TermsPage } from './pages/TermsPage';
 import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { CheckoutSuccessPage } from './pages/CheckoutSuccessPage';
@@ -29,7 +33,7 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   
   // Define public routes that should show the full footer
-  const publicRoutes = ['/', '/login', '/pricing'];
+  const publicRoutes = ['/', '/login', '/pricing', '/about', '/contact', '/privacy', '/terms'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
   
   return (
@@ -40,6 +44,10 @@ const AppContent: React.FC = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/checkout/success" element={<CheckoutSuccessPage />} />

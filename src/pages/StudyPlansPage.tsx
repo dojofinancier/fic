@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { supabase } from '../lib/supabase';
+import { studyPlans } from '../data/studyContent';
+import { downloadStudyPlanPDF } from '../utils/pdfGenerator';
 import { 
   Calendar, 
   Clock, 
@@ -10,47 +11,55 @@ import {
   CheckCircle,
   BookOpen,
   Target,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 export const StudyPlansPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<6 | 8 | 12>(8);
-  const [plans, setPlans] = useState<Record<6|8|12, { id: string; title: string; description?: string; totalHours?: string; dailyCommitment?: string; pdfUrl?: string; schedule: { week: number; chapters: string; focus?: string; hours?: string; tasks: string[] }[] }>>({} as any);
+  const [expandedComponents, setExpandedComponents] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: plansData } = await supabase.from('study_plans').select('*');
-      const result: any = {};
-      for (const p of plansData || []) {
-        const { data: weeksData } = await supabase
-          .from('study_plan_weeks')
-          .select('*')
-          .eq('plan_id', p.id)
-          .order('week_number');
-        result[p.weeks] = {
-          id: p.id,
-          title: p.title,
-          description: p.description ?? undefined,
-          totalHours: p.total_hours ?? undefined,
-          dailyCommitment: p.daily_commitment ?? undefined,
-          pdfUrl: p.pdf_path ? supabase.storage.from('study-assets').getPublicUrl(p.pdf_path).data.publicUrl : undefined,
-          schedule: (weeksData || []).map((w: any) => ({
-            week: w.week_number,
-            chapters: w.chapters,
-            focus: w.focus ?? undefined,
-            hours: w.hours ?? undefined,
-            tasks: w.tasks || [],
-          }))
-        };
+  const currentPlan = studyPlans[selectedPlan];
+
+  const handleDownloadPDF = async () => {
+    await downloadStudyPlanPDF(currentPlan);
+  };
+
+  const toggleComponent = (component: string) => {
+    setExpandedComponents(prev => ({
+      ...prev,
+      [component]: !prev[component]
+    }));
+  };
+
+  // Function to render tasks with proper formatting for nested items
+  const renderTasks = (tasks: string[]) => {
+    return tasks.map((task, index) => {
+      // Check if task contains nested items (has \n    •)
+      if (task.includes('\n    • ')) {
+        const [mainTask, ...nestedTasks] = task.split('\n    • ');
+        return (
+          <li key={index} className="mb-2">
+            <span className="text-gray-700" dangerouslySetInnerHTML={{ __html: mainTask }}></span>
+            <ul className="mt-1 ml-6 space-y-1">
+              {nestedTasks.map((nestedTask, nestedIndex) => (
+                <li key={nestedIndex} className="text-sm text-gray-600 flex items-start">
+                  <span className="text-[#10ac69] mr-2 mt-1">•</span>
+                  <span dangerouslySetInnerHTML={{ __html: nestedTask }}></span>
+                </li>
+              ))}
+            </ul>
+          </li>
+        );
+      } else {
+        return (
+          <li key={index} className="text-gray-700 mb-1" dangerouslySetInnerHTML={{ __html: task }}>
+          </li>
+        );
       }
-      setPlans(result);
-    };
-    load();
-  }, []);
-
-  const currentPlan = plans[selectedPlan];
-
-  // PDF download is provided via stored url when available
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -73,7 +82,7 @@ export const StudyPlansPage: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[6,8,12].map((weeks) => {
-                  const plan = plans[weeks as 6|8|12];
+                  const plan = studyPlans[weeks as 6|8|12];
                   return (
                     <button
                       key={weeks}
@@ -107,7 +116,7 @@ export const StudyPlansPage: React.FC = () => {
                   </h3>
                   <p className="text-gray-600">{currentPlan?.description}</p>
                 </div>
-                <Button onClick={() => currentPlan?.pdfUrl && (window.location.href = currentPlan.pdfUrl!)}>
+                <Button onClick={handleDownloadPDF}>
                   <Download className="h-4 w-4 mr-2" />
                   Télécharger PDF
                 </Button>
@@ -152,13 +161,122 @@ export const StudyPlansPage: React.FC = () => {
                     </div>
                     {week.tasks?.length ? (
                       <ul className="mt-2 text-sm text-gray-700 list-disc ml-6 space-y-1">
-                        {week.tasks.map((t, i) => (
-                          <li key={i}>{t}</li>
-                        ))}
+                        {renderTasks(week.tasks)}
                       </ul>
                     ) : null}
                   </div>
                 ))}
+              </div>
+            </Card>
+
+            {/* How to Succeed Section */}
+            <Card className="mb-8">
+              <h3 className="text-xl font-semibold text-[#3b3b3b] mb-4">Comment réussir l'examen FIC ?</h3>
+              <p className="text-md text-gray-700 mb-3">Bien qu'il existe de nombreuses méthodes pour se préparer à un examen, certaines composantes de votre préparation sont essentielles.</p>
+              <p className="text-md text-gray-700 mb-3">Voici les ingrédients clés de toute préparation efficace au FIC.</p>
+              <ul className="text-gray-700 space-y-2 ml-7 mb-3">
+                <li>1. Lecture du manuel</li>
+                <li>2. Étude contextuelle approfondie</li>
+                <li>3. Répétition espacée</li>
+                <li>4. Questions pratiques</li>
+              </ul>
+              <p className="text-md text-gray-700 mb-3">Il existe d'autres outils comme la prise de notes, la retranscription, ou l'enseignement qui peuvent être efficaces mais les 4 ingrédients mentionnés ci-haut constituent la base de votre régime d'étude.</p>
+              
+              <h4 className="font-semibold text-[#3b3b3b] mb-3 flex items-center">Composantes du plan d'étude</h4>
+              <p className="text-md text-gray-700 mb-3">Le plan d'étude est conçu pour vous aider à réussir l'examen FIC. Il est basé sur les composantes essentielles de toute préparation efficace au FIC.</p>
+              <p className="text-md text-gray-700 mb-3">Voici quelques explications sur ces composantes :</p>
+              
+              {/* Accordion Components */}
+              <div className="space-y-3">
+                {/* Lecture du manuel */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleComponent('lecture')}
+                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
+                  >
+                    <span className="font-semibold text-[#3b3b3b]">Lecture du manuel</span>
+                    {expandedComponents['lecture'] ? (
+                      <ChevronDown className="h-5 w-5 text-[#10ac69]" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-[#10ac69]" />
+                    )}
+                  </button>
+                  {expandedComponents['lecture'] && (
+                    <div className="px-4 pb-4">
+                      <p className="text-md text-gray-700 mb-3">Il y a deux types de lecture: la lecture rapide et la lecture approfondie.</p>
+                      <p className="text-md text-gray-700 mb-3">La lecture rapide est ce qu'on appelle souvent la "lecture en diagonale" ou vous lisez rapidement les titres et sections pour avoir une idée générale de quoi le chapitre parle et du niveau de difficulté et votre niveau de familiarité avec les concepts. Il s'agit d'une technique simple qui permet de préparer le cerveau à la matière. Ça donne aussi une idée de l'étendue du chapitre.</p>
+                      <p className="text-md text-gray-700 mb-3">Lorsque vous faite votre lecture rapide, essayez de repérer les sujets que vous connaissez déjà et les sujets propice à un "deep dive"</p>
+                      <p className="text-md text-gray-700 mb-3">La seconde lecture est la lecture approfondie. Vous prenez votre temps pour prendre des notes et rechercher le vocabulaire que vous ne comprenez pas. Si vous voulez relire le chapitre 2 fois vous pouvez également. Nous recommandons ici de porter une attention particulière aux détails tels que les encadrés "le saviez-vous" ainsi que les statistiques, données historiques ou exemples pratiques qui ressortent souvent à l'examen.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Deep dive */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleComponent('deepdive')}
+                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
+                  >
+                    <span className="font-semibold text-[#3b3b3b]">Deep dive</span>
+                    {expandedComponents['deepdive'] ? (
+                      <ChevronDown className="h-5 w-5 text-[#10ac69]" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-[#10ac69]" />
+                    )}
+                  </button>
+                  {expandedComponents['deepdive'] && (
+                    <div className="px-4 pb-4">
+                      <p className="text-md text-gray-700 mb-3">C'est une recherche en profondeur sur un sujet ou concept précis du manuel. C'est simple, vous ne pouvez pas passer cet examen en vous fiant uniquement au manuel, à moins d'avoir déjà une solide connaissance des marchés financiers. C'est une erreur que beaucoup de gens font: ils basent leur étude seulement sur le livre. C'est pour ça que nous recommandons de choisir quelques sujets à chaque chapitre et de faire des recherches supplémentaires. Pour chercher des informations vous pouvez utiliser ChatGPT, Google, Youtube ou n'importe quel moteur de recherche. Pour avoir des informations additionnelles sur un sujet, nous recommandons de poser des questions.</p>
+                      <p className="text-md text-gray-700 mb-3">Le sujet du deep dive doit être un sujet spécifique et non "les obligations" par exemple car c'est trop vague. Un exemple serait plutôt "les actions privilégiées au Canada". Voici quelques exemples de questions pour débuter votre deep dive mais utilisez votre curiosité:</p>
+                      <ul className="text-gray-700 space-y-2 ml-7 mb-3">
+                        <li>- Comment fonctionnent les actions privilégiées ?</li>
+                        <li>- L'histoire ou l'évolution des actions privilégiées au Canada et USA ?</li>
+                        <li>- Qui utilise les actions privilégiées et quelles sont les plus populaires ?</li>
+                        <li>- Pourquoi les entreprises émettent les actions privilégiées et quel genre de sociétés en émettent ?</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* Flashcards */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleComponent('flashcards')}
+                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
+                  >
+                    <span className="font-semibold text-[#3b3b3b]">Flashcards (cartes mémoire)</span>
+                    {expandedComponents['flashcards'] ? (
+                      <ChevronDown className="h-5 w-5 text-[#10ac69]" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-[#10ac69]" />
+                    )}
+                  </button>
+                  {expandedComponents['flashcards'] && (
+                    <div className="px-4 pb-4">
+                      <p className="text-md text-gray-700 mb-3">Il s'agit soit des flashcards que nous offrons ou encore des flashcards en carton que vous créez vous même. C'est la technique qui est probablement la plus efficace pour pratiquer votre répétition espacée.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quiz et examens pratique */}
+                <div className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => toggleComponent('quiz')}
+                    className="w-full p-4 text-left flex items-center justify-between hover:bg-gray-50"
+                  >
+                    <span className="font-semibold text-[#3b3b3b]">Quiz et examens pratique</span>
+                    {expandedComponents['quiz'] ? (
+                      <ChevronDown className="h-5 w-5 text-[#10ac69]" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-[#10ac69]" />
+                    )}
+                  </button>
+                  {expandedComponents['quiz'] && (
+                    <div className="px-4 pb-4">
+                      <p className="text-md text-gray-700 mb-3">Les quiz et examens pratique sont un moyen efficace de tester vos connaissances et de vous préparer à l'examen. Ils vous permettent de repérer vos points faibles et de les corriger.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </Card>
 
@@ -171,26 +289,16 @@ export const StudyPlansPage: React.FC = () => {
               {/* Video Section */}
               <div className="mb-8">
                 <div className="bg-gray-900 rounded-lg overflow-hidden mb-4">
-                  <div className="aspect-video flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <Play className="h-16 w-16 mx-auto mb-4 opacity-75" />
-                      <p className="text-lg mb-2">Stratégies d'étude pour l'examen FIC</p>
-                      <p className="text-sm opacity-75">Vidéo de formation - 15 minutes</p>
-                      {/* Remplacez par l'iframe Vimeo réel */}
-                      <div className="mt-4">
-                        <iframe
-                          src="https://player.vimeo.com/video/YOUR_VIDEO_ID"
-                          width="100%"
-                          height="100%"
-                          frameBorder="0"
-                          allow="autoplay; fullscreen; picture-in-picture"
-                          allowFullScreen
-                          title="Stratégies d'étude FIC"
-                          className="hidden"
-                        ></iframe>
-                      </div>
-                    </div>
-                  </div>
+                  <iframe
+                    src="https://player.vimeo.com/video/742803331"
+                    width="100%"
+                    height="400"
+                    frameBorder="0"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                    title="Stratégies & Tactiques d'étude pour l'examen FIC"
+                    className="w-full"
+                  ></iframe>
                 </div>
                 <p className="text-sm text-gray-600">
                   Cette vidéo couvre les meilleures pratiques pour étudier efficacement et maximiser votre temps de préparation.
@@ -221,6 +329,7 @@ export const StudyPlansPage: React.FC = () => {
                     <li>• Établissez un horaire d'étude fixe et respectez-le</li>
                     <li>• Alternez entre différents types de matériel (lecture, quiz, vidéos)</li>
                     <li>• Prenez des pauses régulières (technique Pomodoro recommandée)</li>
+                    <li>• Révisez de façon aléatoire au lieu de réviser les chapitres dans l'ordre</li>
                     <li>• Créez un environnement d'étude sans distractions</li>
                   </ul>
                 </div>

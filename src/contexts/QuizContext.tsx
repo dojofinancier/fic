@@ -179,9 +179,13 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           });
         }
       } else if (type === 'exam') {
+        // Compter les examens existants pour déterminer le prochain numéro
+        const existingExams = generatedQuizzes.filter(q => q.type === 'exam');
+        const examNumber = existingExams.length + 1;
+        
         generatedQuizzes.push({
-          id: `exam-practice-${Date.now()}`,
-          title: 'Examen pratique',
+          id: `exam-practice-${examNumber}`,
+          title: `Examen pratique ${examNumber}`,
           chapter: 0,
           type: 'exam',
           questions: chapterQuestions,
