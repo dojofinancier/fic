@@ -8,6 +8,7 @@ import { FlashcardProvider } from './contexts/FlashcardContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { SimpleFooter } from './components/layout/SimpleFooter';
+import { ScrollToTop } from './components/layout/ScrollToTop';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
@@ -18,6 +19,7 @@ import { PracticeExamsPage } from './pages/PracticeExamsPage';
 import { FlashcardsPage } from './pages/FlashcardsPage';
 import { StudyPlansPage } from './pages/StudyPlansPage';
 import { StudyNotesPage } from './pages/StudyNotesPage';
+import { AccountPage } from './pages/AccountPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyPolicyPage } from './pages/PrivacyPolicyPage';
@@ -36,9 +38,13 @@ const AppContent: React.FC = () => {
   const publicRoutes = ['/', '/login', '/pricing', '/about', '/contact', '/privacy', '/terms'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
   
+  // Determine header variant based on route
+  const headerVariant = location.pathname === '/' ? 'dark' : 'default';
+  
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Header />
+      <ScrollToTop />
+      <Header variant={headerVariant} />
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -86,6 +92,12 @@ const AppContent: React.FC = () => {
           <Route path="/study-notes" element={
             <ProtectedRoute requiresAccess={true}>
               <StudyNotesPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/account" element={
+            <ProtectedRoute requiresAccess={true}>
+              <AccountPage />
             </ProtectedRoute>
           } />
           

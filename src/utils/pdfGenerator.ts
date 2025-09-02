@@ -75,7 +75,7 @@ export const generateStudyPlanHTML = (plan: StudyPlan): string => {
       
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="font-size: 12px; color: #999; text-align: center;">
-          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC Study Platform
+          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC® Study Platform
         </p>
       </div>
     </div>
@@ -111,7 +111,7 @@ export const generateStudyNotesHTML = (notes: StudyNote): string => {
       
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="font-size: 12px; color: #999; text-align: center;">
-          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC Study Platform
+          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC® Study Platform
         </p>
       </div>
     </div>
@@ -154,7 +154,7 @@ export const generateAllStudyNotesHTML = (allNotes: Record<number, StudyNote>): 
           Notes d'étude complètes
         </h1>
         <p style="color: #666; font-size: 16px; margin-bottom: 5px;">
-          Programme FIC - Tous les chapitres
+          Programme FIC® - Tous les chapitres
         </p>
         <p style="color: #999; font-size: 14px;">
           ${Object.keys(allNotes).length} chapitres • ${new Date().toLocaleDateString('fr-FR')}
@@ -167,7 +167,7 @@ export const generateAllStudyNotesHTML = (allNotes: Record<number, StudyNote>): 
       
       <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="font-size: 12px; color: #999; text-align: center;">
-          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC Study Platform
+          Généré le ${new Date().toLocaleDateString('fr-FR')} - FIC® Study Platform
         </p>
       </div>
     </div>
@@ -254,6 +254,6 @@ export const downloadStudyNotesPDF = async (notes: StudyNote) => {
 
 export const downloadAllStudyNotesPDF = async (allNotes: Record<number, StudyNote>) => {
   const html = generateAllStudyNotesHTML(allNotes);
-  const filename = `Notes-Etude-Completes-FIC.pdf`;
+  const filename = `Notes-Etude-Completes-FIC®.pdf`;
   await generatePDFFromHTML(html, filename);
 };

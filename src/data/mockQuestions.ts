@@ -3,7 +3,7 @@ import { Question, Quiz } from '../types';
 export const mockQuestions: Question[] = [
   {
     id: '1',
-    question: 'Quel est l\'objectif principal de la réglementation des Fonds d\'investissement canadiens (FIC) ?',
+    question: 'Quel est l\'objectif principal de la réglementation des Fonds d\'investissement canadiens (FIC®) ?',
     options: [
       'Réglementer les transactions boursières',
       'Protéger les investisseurs et assurer des marchés équitables',
@@ -11,7 +11,7 @@ export const mockQuestions: Question[] = [
       'Contrôler les dépenses gouvernementales'
     ],
     correctAnswer: 1,
-    explanation: 'La réglementation FIC est principalement conçue pour protéger les investisseurs et assurer des marchés de capitaux équitables, efficaces et concurrentiels.',
+    explanation: 'La réglementation FIC® est principalement conçue pour protéger les investisseurs et assurer des marchés de capitaux équitables, efficaces et concurrentiels.',
     chapter: 1,
     type: 'quiz' as const
   },

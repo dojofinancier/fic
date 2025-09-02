@@ -269,13 +269,13 @@ export const generateQuestionTemplate = (): string => {
   
   const example = [
     '1',
-    '"Quel est l\'objectif principal de la réglementation FIC ?"',
+            '"Quel est l\'objectif principal de la réglementation FIC® ?"',
     '"Réglementer les transactions boursières"',
     '"Protéger les investisseurs et assurer des marchés équitables"',
     '"Fixer les taux d\'intérêt"',
     '"Contrôler les dépenses gouvernementales"',
     '2',
-    '"La réglementation FIC est principalement conçue pour protéger les investisseurs et assurer des marchés de capitaux équitables, efficaces et concurrentiels."',
+            '"La réglementation FIC® est principalement conçue pour protéger les investisseurs et assurer des marchés de capitaux équitables, efficaces et concurrentiels."',
     '1',
     'quiz'
   ];

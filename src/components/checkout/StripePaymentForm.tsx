@@ -14,6 +14,7 @@ import { Lock, CreditCard } from 'lucide-react';
 
 const CARD_ELEMENT_OPTIONS = {
   hidePostalCode: true,
+  disableLink: true, // This disables the autofill link
   style: {
     base: {
       color: '#424770',

@@ -12,7 +12,9 @@ import {
   Calendar,
   BarChart3,
   Trophy,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  User
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -48,7 +50,7 @@ export const Dashboard: React.FC = () => {
   }, [user?.id]);
 
   const toPercent = (score: number, total?: number | null) => {
-    if (total && total > 0 && score <= total) return Math.round((score / total) * 100);
+    // Score is already a percentage, just return it rounded
     return Math.round(score);
   };
 
@@ -71,9 +73,15 @@ export const Dashboard: React.FC = () => {
       };
     }
 
-    // Average score
-    const percents = results.map(r => toPercent(r.score, r.total_questions));
-    const averageScore = Math.round(percents.reduce((a, b) => a + b, 0) / percents.length);
+    // Average score - use best score per chapter for more accurate representation
+    const bestScoresByChapter = new Map<string, number>();
+    for (const r of results) {
+      const p = toPercent(r.score, r.total_questions);
+      const prev = bestScoresByChapter.get(r.quiz_id) ?? -1;
+      if (p > prev) bestScoresByChapter.set(r.quiz_id, p);
+    }
+    const bestScores = Array.from(bestScoresByChapter.values());
+    const averageScore = bestScores.length > 0 ? Math.round(bestScores.reduce((a, b) => a + b, 0) / bestScores.length) : 0;
 
     // Chapters completed (best >= 70%)
     const bestByQuiz = new Map<string, number>();
@@ -162,7 +170,7 @@ export const Dashboard: React.FC = () => {
             Bon retour, {user.name} !
           </h1>
           <p className="text-gray-600">
-            Continuez votre parcours de préparation à l'examen FIC
+            Continuez votre parcours de préparation à l'examen FIC®
           </p>
         </div>
 
@@ -206,6 +214,22 @@ export const Dashboard: React.FC = () => {
           <div className="lg:col-span-2">
             <h2 className="text-xl font-semibold text-[#3b3b3b] mb-6">Outils d'apprentissage</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Link to="/study-plans">
+                <Card hover className="text-center">
+                  <Calendar className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Plans d'étude</h3>
+                  <p className="text-gray-600 text-sm">Organisez votre horaire d'apprentissage</p>
+                </Card>
+              </Link>
+
+              <Link to="/study-notes">
+                <Card hover className="text-center">
+                  <FileText className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Notes d'étude</h3>
+                  <p className="text-gray-600 text-sm">Notes détaillées par chapitre</p>
+                </Card>
+              </Link>
+
               <Link to="/quizzes">
                 <Card hover className="text-center">
                   <BookOpen className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
@@ -237,27 +261,21 @@ export const Dashboard: React.FC = () => {
                   <p className="text-gray-600 text-sm">Obtenez de l'aide et des explications instantanées</p>
                 </Card>
               </Link>
-
-              <Link to="/study-plans">
-                <Card hover className="text-center">
-                  <Calendar className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Plans d'étude</h3>
-                  <p className="text-gray-600 text-sm">Organisez votre horaire d'apprentissage</p>
-                </Card>
-              </Link>
-
-              <Link to="/study-notes">
-                <Card hover className="text-center">
-                  <BarChart3 className="h-12 w-12 text-[#10ac69] mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-[#3b3b3b] mb-2">Notes d'étude</h3>
-                  <p className="text-gray-600 text-sm">Notes détaillées par chapitre</p>
-                </Card>
-              </Link>
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Account Link */}
+            <Card>
+              <div className="p-4">
+                <Link to="/account" className="flex items-center justify-center w-full px-4 py-2 bg-[#10ac69] text-white rounded-md hover:bg-[#0e9558] transition-colors">
+                  <User className="h-4 w-4 mr-2" />
+                  Mon compte
+                </Link>
+              </div>
+            </Card>
+            
             {/* Recent Activity */}
             <Card>
               <h3 className="text-lg font-semibold text-[#3b3b3b] mb-4">Activité récente</h3>

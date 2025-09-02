@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useQuiz } from '../contexts/QuizContext';
-import { Clock, Trophy, ArrowRight, AlertCircle } from 'lucide-react';
+import { Clock, Trophy, ArrowRight, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export const PracticeExamsPage: React.FC = () => {
   const { quizzes } = useQuiz();
@@ -14,8 +14,12 @@ export const PracticeExamsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
+          <Link to="/dashboard" className="inline-flex items-center text-[#10ac69] hover:text-[#0e9558] mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour au tableau de bord
+          </Link>
           <h1 className="text-3xl font-bold text-[#3b3b3b] mb-2">Examens pratiques</h1>
-          <p className="text-gray-600">Simulez l'expérience d'examen FIC réel avec des conditions chronométrées</p>
+          <p className="text-gray-600">Simulez l'expérience d'examen FIC® réel avec des conditions chronométrées</p>
         </div>
 
         {/* Info Banner */}

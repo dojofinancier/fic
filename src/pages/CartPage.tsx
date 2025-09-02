@@ -68,7 +68,7 @@ export const CartPage: React.FC = () => {
             <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-[#3b3b3b] mb-4">Votre panier est vide</h2>
             <p className="text-gray-600 mb-6">
-              Ajoutez l'accès complet au Dojo Financier pour commencer votre préparation à l'examen FIC.
+              Ajoutez l'accès complet au Dojo Financier pour commencer votre préparation à l'examen FIC®.
             </p>
             <Link to="/pricing">
               <Button>Voir les options d'accès</Button>
@@ -96,44 +96,47 @@ export const CartPage: React.FC = () => {
               
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-[#3b3b3b]">{item.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-                      <p className="text-lg font-bold text-[#10ac69] mt-2">{formatPrice(item.price)}</p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      {/* Quantité */}
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                  <div key={item.id} className="p-4 border border-gray-200 rounded-lg">
+                    {/* Main product info */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[#3b3b3b]">{item.name}</h3>
+                        <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                        <p className="text-lg font-bold text-[#10ac69] mt-2">{formatPrice(item.price)}</p>
                       </div>
                       
-                      {/* Supprimer */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      {/* Subtle delete button */}
+                      <button
                         onClick={() => removeItem(item.id)}
-                        className="text-red-600 hover:bg-red-50"
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1 ml-2 flex-shrink-0"
+                        title="Supprimer"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
+                    
+                    {/* Subtle quantity indicator - only show if > 1 */}
+                    {item.quantity > 1 && (
+                      <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                        <span className="text-xs text-gray-500">Quantité: {item.quantity}</span>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="text-gray-400 hover:text-[#10ac69] transition-colors p-1"
+                            title="Diminuer"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="text-gray-400 hover:text-[#10ac69] transition-colors p-1"
+                            title="Augmenter"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

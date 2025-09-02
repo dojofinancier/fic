@@ -54,7 +54,9 @@ export const CheckoutPage: React.FC = () => {
   });
 
   useEffect(() => {
+    console.log('🛒 CheckoutPage: Items changed:', items);
     if (items.length === 0 && !paymentSuccess) {
+      console.log('🛒 CheckoutPage: No items in cart, redirecting to cart');
       navigate('/cart');
       return;
     }
@@ -269,17 +271,51 @@ export const CheckoutPage: React.FC = () => {
 
               {/* Informations de paiement */}
               {isFormValid ? (
-                <Elements stripe={stripePromise}>
-                  <StripePaymentForm
-                    billingInfo={billingInfo}
-                    password={password}
-                    confirmPassword={confirmPassword}
-                    setAccountError={setAccountError}
-                    onSuccess={handlePaymentSuccess}
-                    onError={handlePaymentError}
-                    refreshUserProfile={refreshUserProfile}
-                  />
-                </Elements>
+                <div>
+                  {console.log('🛒 CheckoutPage: Rendering Stripe Elements, stripePromise:', stripePromise)}
+                  {stripePromise ? (
+                    <Elements stripe={stripePromise}>
+                      <StripePaymentForm
+                        billingInfo={billingInfo}
+                        password={password}
+                        confirmPassword={confirmPassword}
+                        setAccountError={setAccountError}
+                        onSuccess={handlePaymentSuccess}
+                        onError={handlePaymentError}
+                        refreshUserProfile={refreshUserProfile}
+                      />
+                    </Elements>
+                  ) : (
+                    <Card className="bg-yellow-50 border-yellow-200">
+                      <div className="text-center py-8">
+                        <div className="text-yellow-500 text-6xl mb-4">⚠️</div>
+                        <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                          Mode test - Stripe non configuré
+                        </h3>
+                        <p className="text-yellow-600 mb-4">
+                          Le système de paiement Stripe n'est pas configuré.
+                        </p>
+                        <div className="space-y-4">
+                          <p className="text-sm text-yellow-500">
+                            Pour configurer Stripe, créez un fichier .env avec:
+                          </p>
+                          <code className="block bg-yellow-100 p-2 rounded text-xs">
+                            VITE_STRIPE_PUBLISHABLE_KEY=pk_test_votre_cle_stripe
+                          </code>
+                          <Button 
+                            onClick={() => {
+                              console.log('🛒 CheckoutPage: Test payment button clicked');
+                              alert('Mode test - Paiement simulé');
+                            }}
+                            className="bg-yellow-600 hover:bg-yellow-700"
+                          >
+                            Tester le paiement (Mode test)
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
+                </div>
               ) : (
                 <Card>
                   <div className="text-center py-8">

@@ -1,3 +1,123 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Animated iPhone Mockup Styles */
+.hero-img-container {
+  perspective: 1000px;
+}
+
+/* Feature Screenshot Animations */
+.feature-screenshot {
+  animation: float 6s ease-in-out infinite;
+  transition: all 0.3s ease-out;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+}
+
+.quiz-screenshot {
+  animation-delay: 0s;
+}
+
+.flashcards-screenshot {
+  animation-delay: 2s;
+}
+
+.notes-screenshot {
+  animation-delay: 4s;
+}
+
+.plans-screenshot {
+  animation-delay: 1s;
+}
+
+.feature-screenshot:hover {
+  transform: scale(1.15) translateY(-8px);
+  z-index: 10;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.4));
+}
+
+.feature-screenshot img {
+  transition: all 0.3s ease-out;
+}
+
+.feature-screenshot:hover img {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.hero-image-wrapper {
+  animation: slideInUp 1s ease-out 1s both;
+}
+
+.hero-img {
+  transition: transform 0.3s ease-out;
+}
+
+.hero-img:hover {
+  transform: translate3d(0px, 0px, 0px) scale3d(1.02, 1.02, 1) rotateX(5deg) rotateY(-8deg) rotateZ(0deg) !important;
+}
+
+/* 3D Shadow Animation */
+._3d-shade {
+  animation: shadowFloat 6s ease-in-out infinite;
+}
+
+
+
+/* Keyframe Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes phoneFloat {
+  0%, 100% { 
+    transform: translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(5deg) rotateY(-8deg) rotateZ(0deg); 
+  }
+  50% { 
+    transform: translate3d(0px, -8px, 0px) scale3d(1, 1, 1) rotateX(5deg) rotateY(-8deg) rotateZ(0deg); 
+  }
+}
+
+@keyframes shadowFloat {
+  0%, 100% { transform: translate3d(4px, 4px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  50% { transform: translate3d(4px, 2px, 0px) scale3d(1, 1, 1) rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+}
+
+
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(5deg) rotateY(-8deg) rotateZ(0deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px) translate3d(0px, 0px, 0px) scale3d(1, 1, 1) rotateX(5deg) rotateY(-8deg) rotateZ(0deg);
+  }
+}
+
+/* Mobile Responsive - Disable animations */
+@media (max-width: 1024px) {
+  .feature-screenshot,
+  .hero-image-wrapper,
+  ._3d-shade {
+    animation: none;
+  }
+  
+  .hero-img {
+    transform: none !important;
+    transition: none;
+  }
+  
+  .hero-img:hover {
+    transform: none !important;
+  }
+  
+  ._3d-shade {
+    transform: none !important;
+  }
+  
+  .feature-screenshot:hover {
+    transform: none;
+  }
+}

@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "convert-markdown": "node scripts/convertMarkdownToTS.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@stripe/react-stripe-js": "^3.9.0",

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { studyNotes } from '../data/studyContent';
@@ -9,7 +10,8 @@ import {
   ChevronRight,
   FileText,
   Lightbulb,
-  Target
+  Target,
+  ArrowLeft
 } from 'lucide-react';
 
 export const StudyNotesPage: React.FC = () => {
@@ -30,9 +32,13 @@ export const StudyNotesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
+          <Link to="/dashboard" className="inline-flex items-center text-[#10ac69] hover:text-[#0e9558] mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour au tableau de bord
+          </Link>
           <h1 className="text-3xl font-bold text-[#3b3b3b] mb-2">Notes d'étude</h1>
           <p className="text-gray-600">
-            Notes détaillées pour chaque chapitre du programme FIC
+            Notes détaillées pour chaque chapitre du programme FIC®
           </p>
         </div>
 
@@ -40,12 +46,14 @@ export const StudyNotesPage: React.FC = () => {
           {/* Chapter Selection */}
           <div className="lg:col-span-1">
             <Card className="sticky top-8">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="font-semibold text-[#3b3b3b]">Chapitres</h2>
-                <Button size="sm" onClick={handleDownloadAllPDF}>
-                  <Download className="h-4 w-4 mr-1" />
-                  Tout
-                </Button>
+              <div className="mb-4">
+                <h2 className="font-semibold text-[#3b3b3b] mb-3">Chapitres</h2>
+                <div className="flex justify-center sm:justify-end">
+                  <Button size="sm" onClick={handleDownloadAllPDF} variant="outline" className="text-sm">
+                    <Download className="h-3 w-3 mr-1" />
+                    Télécharger tout
+                  </Button>
+                </div>
               </div>
               <div className="space-y-1">
                 <div className="space-y-1">
@@ -72,17 +80,19 @@ export const StudyNotesPage: React.FC = () => {
           <div className="lg:col-span-3">
             {currentNotes ? (
               <Card>
-                <div className="flex justify-between items-start mb-6">
-                  <div>
+                <div className="mb-6">
+                  <div className="mb-4">
                     <h2 className="text-2xl font-bold text-[#3b3b3b] mb-2">
                       Chapitre {selectedChapter}
                     </h2>
                     <h3 className="text-xl text-gray-600">{currentNotes.title}</h3>
                   </div>
-                  <Button onClick={handleDownloadPDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    PDF
-                  </Button>
+                  <div className="flex justify-center sm:justify-end">
+                    <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="text-sm">
+                      <Download className="h-3 w-3 mr-2" />
+                      Télécharger PDF
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-8">
@@ -128,24 +138,35 @@ export const StudyNotesPage: React.FC = () => {
                 </div>
 
                 {/* Navigation */}
-                <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedChapter(Math.max(1, selectedChapter - 1))}
-                    disabled={selectedChapter === 1}
-                  >
-                    Chapitre précédent
-                  </Button>
-                  <span className="text-sm text-gray-500">
-                    Chapitre {selectedChapter} sur 18
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSelectedChapter(Math.min(18, selectedChapter + 1))}
-                    disabled={selectedChapter === 18}
-                  >
-                    Chapitre suivant
-                  </Button>
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  {/* Chapter indicator - stacked above buttons on mobile */}
+                  <div className="text-center mb-4">
+                    <span className="text-sm text-gray-500">
+                      Chapitre {selectedChapter} sur 18
+                    </span>
+                  </div>
+                  
+                  {/* Navigation buttons - always on same line */}
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedChapter(Math.max(1, selectedChapter - 1))}
+                      disabled={selectedChapter === 1}
+                      className="text-gray-600 hover:text-[#10ac69] hover:bg-gray-50"
+                    >
+                      ← Chapitre précédent
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedChapter(Math.min(18, selectedChapter + 1))}
+                      disabled={selectedChapter === 18}
+                      className="text-gray-600 hover:text-[#10ac69] hover:bg-gray-50"
+                    >
+                      Chapitre suivant →
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ) : (

@@ -364,8 +364,11 @@ export const QuizPage: React.FC = () => {
               Précédent
             </Button>
 
-            <div className="text-sm text-gray-600">
-              {Object.keys(selectedAnswers).length} sur {quiz.questions.length} répondues
+            {/* Progress indicator - centered between buttons */}
+            <div className="text-center px-4">
+              <div className="text-sm text-gray-600 font-medium">
+                {Object.keys(selectedAnswers).length}/{quiz.questions.length}
+              </div>
             </div>
 
             {isLastQuestion ? (

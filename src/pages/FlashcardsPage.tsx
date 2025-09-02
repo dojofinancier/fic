@@ -246,6 +246,10 @@ export const FlashcardsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
+          <Link to="/dashboard" className="inline-flex items-center text-[#10ac69] hover:text-[#0e9558] mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Retour au tableau de bord
+          </Link>
           <h1 className="text-3xl font-bold text-[#3b3b3b] mb-2">Cartes mémoire</h1>
           <p className="text-gray-600">
             Mémorisez efficacement les concepts clés avec nos cartes interactives

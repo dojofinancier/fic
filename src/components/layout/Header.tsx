@@ -5,7 +5,11 @@ import { useCart } from '../../contexts/CartContext';
 import { Button } from '../ui/Button';
 import { User, LogOut, LayoutDashboard, ShoppingCart } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  variant?: 'default' | 'dark';
+}
+
+export const Header: React.FC<HeaderProps> = ({ variant = 'default' }) => {
   const { user, logout } = useAuth();
   const { items } = useCart();
   const navigate = useNavigate();
@@ -15,15 +19,20 @@ export const Header: React.FC = () => {
     navigate('/');
   };
 
+  const bgColor = variant === 'dark' ? 'bg-[#063D3A]' : 'bg-[#10ac69]';
+  
   return (
-    <header className="bg-[#10ac69] shadow-sm sticky top-0 z-50">
+    <header className={`${bgColor} shadow-sm sticky top-0 z-50`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20 sm:h-24">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="http://dojofinancier.ca/wp-content/uploads/2025/06/LOGO-White-300.webp" 
+              src="/logo_white.png" 
               alt="Le Dojo Financier" 
-              className="h-8 w-auto"
+              className="h-12 sm:h-[51px] w-auto object-contain max-w-[150px] sm:max-w-[200px]"
+              style={{ 
+                imageRendering: 'auto'
+              }}
             />
           </Link>
 
@@ -68,7 +77,7 @@ export const Header: React.FC = () => {
             ) : (
               <>
                 <Link to="/login" className="hidden sm:block">
-                  <Button variant="ghost" size="sm" className="text-white hover:bg-white/10">
+                  <Button variant="ghost" size="lg" className="text-white hover:bg-white/10">
                     Mon compte
                   </Button>
                 </Link>
@@ -78,7 +87,7 @@ export const Header: React.FC = () => {
                   </Button>
                 </Link>
                 <Link to="/pricing">
-                  <Button variant="secondary" size="sm" className="bg-white text-[#10ac69] hover:bg-gray-100">
+                  <Button variant="secondary" size="lg" className="bg-white text-[#10ac69] hover:bg-gray-100 rounded-md px-4 py-1 text-base font-semibold">
                     Commencer
                   </Button>
                 </Link>

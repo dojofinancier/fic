@@ -144,7 +144,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.error('AuthProvider: Error during initialization:', error);
       } finally {
-        setLoading(false);
+        // Only set loading to false after we've attempted to restore the session
+        // This prevents premature redirects in ProtectedRoute
+        setTimeout(() => setLoading(false), 100);
       }
     };
 
@@ -155,17 +157,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('AuthProvider: Auth state changed:', event, session ? 'with user' : 'no user');
 
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('AuthProvider: SIGNED_IN event detected, fetching profile...');
         const profile = await fetchUserProfile(session.user);
         if (profile) {
-          console.log('AuthProvider: Setting user from auth change:', profile);
+          console.log('AuthProvider: Profile loaded successfully, setting user:', profile);
+          console.log('AuthProvider: User hasAccess:', profile.hasAccess);
           setUser(profile);
+        } else {
+          console.error('AuthProvider: Failed to load user profile after SIGNED_IN');
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('AuthProvider: User signed out');
         setUser(null);
       }
       
-      setLoading(false);
+      // Don't set loading to false here to avoid race conditions
+      // Only set it during initialization
     });
 
     return () => {
@@ -186,7 +193,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(error.message);
     }
     
-    console.log('AuthProvider: Login successful');
+    console.log('AuthProvider: Login successful, waiting for profile to load...');
+    
+    // Wait for the user profile to be loaded via onAuthStateChange
+    return new Promise<void>((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 30; // 3 seconds max wait
+      
+      const checkForUser = setInterval(async () => {
+        attempts++;
+        console.log(`AuthProvider: Checking for user profile... Attempt ${attempts}/${maxAttempts}`);
+        
+        // Check the actual Supabase session instead of React state
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('AuthProvider: Session found, fetching profile...');
+          
+          try {
+            const profile = await fetchUserProfile(session.user);
+            if (profile) {
+              console.log('AuthProvider: Profile loaded successfully:', profile);
+              setUser(profile);
+              clearInterval(checkForUser);
+              resolve();
+              return;
+            }
+          } catch (err) {
+            console.error('AuthProvider: Profile fetch failed:', err);
+          }
+        }
+        
+        if (attempts >= maxAttempts) {
+          console.error('AuthProvider: Timeout waiting for user profile');
+          clearInterval(checkForUser);
+          reject(new Error('Timeout waiting for user profile to load'));
+        }
+      }, 100);
+    });
   };
 
   const register = async (email: string, password: string, name: string) => {
