@@ -63,53 +63,172 @@ export const PricingPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Plan 1: Basic Access */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        {/* Desktop Layout: Pricing boxes side by side, features below */}
+        <div className="hidden lg:block mb-12">
+          {/* Pricing Cards Row */}
+          <div className="grid grid-cols-2 gap-8 max-w-5xl mx-auto mb-8">
+            {/* Plan 1 Pricing Card */}
+            <Card className="text-center p-8 border-2 border-[#10ac69] relative h-full">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="bg-[#10ac69] text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Le plus populaire
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan d'accès complet</h3>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                  <span className="text-sm text-gray-600">(4,9/5 de 475 étudiants)</span>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$197</div>
+                <div className="text-gray-600">Paiement unique • Accès d'un an</div>
+                <div className="text-sm text-green-600 font-medium mt-1">
+                  Économisez 300 $ par rapport au tutorat individuel
+                </div>
+              </div>
+
+              <Button size="lg" className="w-full mb-6">
+                <button 
+                  onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)} 
+                  className="w-full"
+                >
+                  Commencez maintenant
+                </button>
+              </Button>
+              
+              <div className="text-sm text-gray-600">
+                Garantie de remboursement de 30 jours
+              </div>
+            </Card>
+
+            {/* Plan 2 Pricing Card */}
+            <Card className="text-center p-8 border border-gray-300 relative h-full">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                  <Users className="h-4 w-4" />
+                  <span>Coaching inclus</span>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan Premium + Coaching</h3>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                  <span className="text-sm text-gray-600">(5,0/5 de 106 étudiants)</span>
+                </div>
+              </div>
+
+              <div className="mb-8">
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$627</div>
+                <div className="text-gray-600">Paiement unique • Accès d'un an + 6h coaching</div>
+                <div className="text-sm text-blue-600 font-medium mt-1">
+                  Coaching privé avec un professionnel certifié
+                </div>
+              </div>
+
+              <Button variant="outline" size="lg" className="w-full mb-6">
+                <button 
+                  onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)} 
+                  className="w-full"
+                >
+                  Choisir ce plan
+                </button>
+              </Button>
+              
+              <div className="text-sm text-gray-600">
+                Garantie de remboursement de 30 jours
+              </div>
+            </Card>
+          </div>
+
+          {/* Features Row */}
+          <div className="grid grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Plan 1 Features */}
+            <Card>
+              <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
+                Plan d'accès complet
+              </h3>
+              <div className="space-y-4">
+                {features.map((feature, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <CheckCircle className="h-5 w-5 text-[#10ac69] flex-shrink-0" />
+                    <span className="text-gray-700">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Plan 2 Features */}
+            <Card>
+              <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
+                Plan Premium + Coaching
+              </h3>
+              <div className="space-y-4">
+                {coachingFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-center space-x-3">
+                    <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <span className="text-gray-700">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Mobile Layout: Product 1 price + features, then Product 2 price + features */}
+        <div className="lg:hidden space-y-12">
+          {/* Plan 1: Basic Access */}
+          <div className="space-y-6">
             {/* Pricing Card */}
-            <div className="lg:order-1">
-              <Card className="text-center p-8 border-2 border-[#10ac69] relative h-full">
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-[#10ac69] text-white px-4 py-1 rounded-full text-sm font-medium">
-                    Le plus populaire
-                  </div>
+            <Card className="text-center p-8 border-2 border-[#10ac69] relative">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="bg-[#10ac69] text-white px-4 py-1 rounded-full text-sm font-medium">
+                  Le plus populaire
                 </div>
-                
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan d'accès complet</h3>
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                    <span className="text-sm text-gray-600">(4,9/5 de 475 étudiants)</span>
-                  </div>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan d'accès complet</h3>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                  <span className="text-sm text-gray-600">(4,9/5 de 475 étudiants)</span>
                 </div>
+              </div>
 
-                <div className="mb-8">
-                  <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$197</div>
-                  <div className="text-gray-600">Paiement unique • Accès d'un an</div>
-                  <div className="text-sm text-green-600 font-medium mt-1">
-                    Économisez 300 $ par rapport au tutorat individuel
-                  </div>
+              <div className="mb-8">
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$197</div>
+                <div className="text-gray-600">Paiement unique • Accès d'un an</div>
+                <div className="text-sm text-green-600 font-medium mt-1">
+                  Économisez 300 $ par rapport au tutorat individuel
                 </div>
+              </div>
 
-                <Button size="lg" className="w-full mb-6">
-                  <button 
-                    onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)} 
-                    className="w-full"
-                  >
-                    Commencez maintenant
-                  </button>
-                </Button>
-                
-                <div className="text-sm text-gray-600">
-                  Garantie de remboursement de 30 jours
-                </div>
-              </Card>
-            </div>
+              <Button size="lg" className="w-full mb-6">
+                <button 
+                  onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)} 
+                  className="w-full"
+                >
+                  Commencez maintenant
+                </button>
+              </Button>
+              
+              <div className="text-sm text-gray-600">
+                Garantie de remboursement de 30 jours
+              </div>
+            </Card>
 
             {/* Features */}
-            <Card className="lg:order-2">
+            <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
                 Plan d'accès complet
               </h3>
@@ -123,56 +242,52 @@ export const PricingPage: React.FC = () => {
               </div>
             </Card>
           </div>
-        </div>
 
-        {/* Plan 2: Premium Coaching */}
-        <div className="mb-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Plan 2: Premium Coaching */}
+          <div className="space-y-6">
             {/* Pricing Card */}
-            <div className="lg:order-1">
-              <Card className="text-center p-8 border border-gray-300 relative h-full">
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
-                    <Users className="h-4 w-4" />
-                    <span>Coaching inclus</span>
-                  </div>
+            <Card className="text-center p-8 border border-gray-300 relative">
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
+                  <Users className="h-4 w-4" />
+                  <span>Coaching inclus</span>
                 </div>
-                
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan Premium + Coaching</h3>
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
-                    ))}
-                    <span className="text-sm text-gray-600">(5,0/5 de 106 étudiants)</span>
-                  </div>
+              </div>
+              
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan Premium + Coaching</h3>
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
+                  ))}
+                  <span className="text-sm text-gray-600">(5,0/5 de 106 étudiants)</span>
                 </div>
+              </div>
 
-                <div className="mb-8">
-                  <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$627</div>
-                  <div className="text-gray-600">Paiement unique • Accès d'un an + 6h coaching</div>
-                  <div className="text-sm text-blue-600 font-medium mt-1">
-                    Coaching privé avec un professionnel certifié
-                  </div>
+              <div className="mb-8">
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$627</div>
+                <div className="text-gray-600">Paiement unique • Accès d'un an + 6h coaching</div>
+                <div className="text-sm text-blue-600 font-medium mt-1">
+                  Coaching privé avec un professionnel certifié
                 </div>
+              </div>
 
-                <Button variant="outline" size="lg" className="w-full mb-6">
-                  <button 
-                    onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)} 
-                    className="w-full"
-                  >
-                    Choisir ce plan
-                  </button>
-                </Button>
-                
-                <div className="text-sm text-gray-600">
-                  Garantie de remboursement de 30 jours
-                </div>
-              </Card>
-            </div>
+              <Button variant="outline" size="lg" className="w-full mb-6">
+                <button 
+                  onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)} 
+                  className="w-full"
+                >
+                  Choisir ce plan
+                </button>
+              </Button>
+              
+              <div className="text-sm text-gray-600">
+                Garantie de remboursement de 30 jours
+              </div>
+            </Card>
 
             {/* Features */}
-            <Card className="lg:order-2">
+            <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
                 Plan Premium + Coaching
               </h3>
