@@ -4,20 +4,25 @@ import { useCart } from '../contexts/CartContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { CheckCircle, Star, Users } from 'lucide-react';
+import { PRODUCTS, getProduct, formatPrice } from '../config/products';
 
 export const PricingPage: React.FC = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const handleGetStarted = (productId: string, name: string, price: number) => {
+  const handleGetStarted = (productId: string) => {
+    const product = getProduct(productId);
+    if (!product) {
+      console.error('Product not found:', productId);
+      return;
+    }
+
     // Ajouter le produit au panier
     addItem({
-      id: productId,
-      name: name,
-      description: productId === 'full-access' 
-        ? 'Accès complet à tous les outils d\'apprentissage FIC®'
-        : 'Accès complet + 6h de coaching privé avec un professionnel',
-      price: price,
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
       quantity: 1
     });
     
@@ -25,29 +30,9 @@ export const PricingPage: React.FC = () => {
     navigate('/cart');
   };
 
-  const features = [
-            'Matériel d\'examen FIC® complet',
-    'Quiz interactifs par chapitre',
-    'Examens pratiques chronométrés',
-    'Système de cartes mémoire intelligent',
-    'Support de tutorat virtuel 24h/24 et 7j/7',
-    'Plans d\'étude téléchargeables',
-    'Suivi des progrès et analyses',
-    'Plateforme compatible mobile',
-    'Résumés de chapitres',
-    'Aperçus de performance',
-    'Garantie d\'accès d\'un an',
-    'Garantie de remboursement'
-  ];
-
-  const coachingFeatures = [
-    'Tout ce qui est inclus dans le plan de base',
-    '6 heures de coaching privé en ligne',
-    'Sessions personnalisées selon vos besoins',
-    'Accompagnement par un professionnel certifié',
-    'Planification de sessions flexibles',
-    'Support par email entre les sessions'
-  ];
+  // Get products from configuration
+  const fullAccessProduct = getProduct('full-access');
+  const premiumCoachingProduct = getProduct('premium-coaching');
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -71,12 +56,12 @@ export const PricingPage: React.FC = () => {
             <Card className="text-center p-8 border-2 border-[#10ac69] relative h-full">
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="bg-[#10ac69] text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Le plus populaire
+                  {fullAccessProduct?.badge || 'Le plus populaire'}
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan d'accès complet</h3>
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">{fullAccessProduct?.name || 'Plan d\'accès complet'}</h3>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
@@ -86,7 +71,9 @@ export const PricingPage: React.FC = () => {
               </div>
 
               <div className="mb-8">
-                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$197</div>
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">
+                  {fullAccessProduct ? formatPrice(fullAccessProduct.price) : '$197'}
+                </div>
                 <div className="text-gray-600">Paiement unique • Accès d'un an</div>
                 <div className="text-sm text-green-600 font-medium mt-1">
                   Économisez 300 $ par rapport au tutorat individuel
@@ -95,7 +82,7 @@ export const PricingPage: React.FC = () => {
 
               <Button size="lg" className="w-full mb-6">
                 <button 
-                  onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)} 
+                  onClick={() => handleGetStarted('full-access')} 
                   className="w-full"
                 >
                   Commencez maintenant
@@ -112,12 +99,12 @@ export const PricingPage: React.FC = () => {
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>Coaching inclus</span>
+                  <span>{premiumCoachingProduct?.badge || 'Coaching inclus'}</span>
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan Premium + Coaching</h3>
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">{premiumCoachingProduct?.name || 'Plan Premium + Coaching'}</h3>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
@@ -127,7 +114,9 @@ export const PricingPage: React.FC = () => {
               </div>
 
               <div className="mb-8">
-                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$627</div>
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">
+                  {premiumCoachingProduct ? formatPrice(premiumCoachingProduct.price) : '$627'}
+                </div>
                 <div className="text-gray-600">Paiement unique • Accès d'un an + 6h coaching</div>
                 <div className="text-sm text-blue-600 font-medium mt-1">
                   Coaching privé avec un professionnel certifié
@@ -136,7 +125,7 @@ export const PricingPage: React.FC = () => {
 
               <Button variant="outline" size="lg" className="w-full mb-6">
                 <button 
-                  onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)} 
+                  onClick={() => handleGetStarted('premium-coaching')} 
                   className="w-full"
                 >
                   Choisir ce plan
@@ -154,10 +143,10 @@ export const PricingPage: React.FC = () => {
             {/* Plan 1 Features */}
             <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
-                Plan d'accès complet
+                {fullAccessProduct?.name || 'Plan d\'accès complet'}
               </h3>
               <div className="space-y-4">
-                {features.map((feature, index) => (
+                {(fullAccessProduct?.features || []).map((feature, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-[#10ac69] flex-shrink-0" />
                     <span className="text-gray-700">{feature}</span>
@@ -169,10 +158,10 @@ export const PricingPage: React.FC = () => {
             {/* Plan 2 Features */}
             <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
-                Plan Premium + Coaching
+                {premiumCoachingProduct?.name || 'Plan Premium + Coaching'}
               </h3>
               <div className="space-y-4">
-                {coachingFeatures.map((feature, index) => (
+                {(premiumCoachingProduct?.features || []).map((feature, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
                     <span className="text-gray-700">{feature}</span>
@@ -191,12 +180,12 @@ export const PricingPage: React.FC = () => {
             <Card className="text-center p-8 border-2 border-[#10ac69] relative">
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="bg-[#10ac69] text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Le plus populaire
+                  {fullAccessProduct?.badge || 'Le plus populaire'}
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan d'accès complet</h3>
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">{fullAccessProduct?.name || 'Plan d\'accès complet'}</h3>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
@@ -206,7 +195,9 @@ export const PricingPage: React.FC = () => {
               </div>
 
               <div className="mb-8">
-                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$197</div>
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">
+                  {fullAccessProduct ? formatPrice(fullAccessProduct.price) : '$197'}
+                </div>
                 <div className="text-gray-600">Paiement unique • Accès d'un an</div>
                 <div className="text-sm text-green-600 font-medium mt-1">
                   Économisez 300 $ par rapport au tutorat individuel
@@ -215,7 +206,7 @@ export const PricingPage: React.FC = () => {
 
               <Button size="lg" className="w-full mb-6">
                 <button 
-                  onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)} 
+                  onClick={() => handleGetStarted('full-access')} 
                   className="w-full"
                 >
                   Commencez maintenant
@@ -230,10 +221,10 @@ export const PricingPage: React.FC = () => {
             {/* Features */}
             <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
-                Plan d'accès complet
+                {fullAccessProduct?.name || 'Plan d\'accès complet'}
               </h3>
               <div className="space-y-4">
-                {features.map((feature, index) => (
+                {(fullAccessProduct?.features || []).map((feature, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-[#10ac69] flex-shrink-0" />
                     <span className="text-gray-700">{feature}</span>
@@ -250,12 +241,12 @@ export const PricingPage: React.FC = () => {
               <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                 <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center space-x-1">
                   <Users className="h-4 w-4" />
-                  <span>Coaching inclus</span>
+                  <span>{premiumCoachingProduct?.badge || 'Coaching inclus'}</span>
                 </div>
               </div>
               
               <div className="mb-6">
-                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">Plan Premium + Coaching</h3>
+                <h3 className="text-2xl font-bold text-[#3b3b3b] mb-2">{premiumCoachingProduct?.name || 'Plan Premium + Coaching'}</h3>
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
@@ -265,7 +256,9 @@ export const PricingPage: React.FC = () => {
               </div>
 
               <div className="mb-8">
-                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">$627</div>
+                <div className="text-5xl font-bold text-[#3b3b3b] mb-2">
+                  {premiumCoachingProduct ? formatPrice(premiumCoachingProduct.price) : '$627'}
+                </div>
                 <div className="text-gray-600">Paiement unique • Accès d'un an + 6h coaching</div>
                 <div className="text-sm text-blue-600 font-medium mt-1">
                   Coaching privé avec un professionnel certifié
@@ -274,7 +267,7 @@ export const PricingPage: React.FC = () => {
 
               <Button variant="outline" size="lg" className="w-full mb-6">
                 <button 
-                  onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)} 
+                  onClick={() => handleGetStarted('premium-coaching')} 
                   className="w-full"
                 >
                   Choisir ce plan
@@ -289,10 +282,10 @@ export const PricingPage: React.FC = () => {
             {/* Features */}
             <Card>
               <h3 className="text-xl font-bold text-[#3b3b3b] mb-6 text-center">
-                Plan Premium + Coaching
+                {premiumCoachingProduct?.name || 'Plan Premium + Coaching'}
               </h3>
               <div className="space-y-4">
-                {coachingFeatures.map((feature, index) => (
+                {(premiumCoachingProduct?.features || []).map((feature, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
                     <span className="text-gray-700">{feature}</span>
@@ -351,11 +344,11 @@ export const PricingPage: React.FC = () => {
             Rejoignez des milliers de candidats qui ont réussi et commencez votre parcours aujourd'hui.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={() => handleGetStarted('full-access', 'Plan d\'accès complet', 197)}>
-              Commencez maintenant - 197 $
+            <Button size="lg" onClick={() => handleGetStarted('full-access')}>
+              Commencez maintenant - {fullAccessProduct ? formatPrice(fullAccessProduct.price) : '$197'}
             </Button>
-            <Button variant="outline" size="lg" onClick={() => handleGetStarted('premium-coaching', 'Plan Premium + Coaching', 627)}>
-              Plan Premium - 627 $
+            <Button variant="outline" size="lg" onClick={() => handleGetStarted('premium-coaching')}>
+              Plan Premium - {premiumCoachingProduct ? formatPrice(premiumCoachingProduct.price) : '$627'}
             </Button>
             <Link to="/login">
               <Button variant="ghost" size="lg">

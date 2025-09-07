@@ -4,6 +4,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { supabase } from '../../lib/supabase';
 import { Coupon } from '../../types/payment';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   Tag, 
   Plus, 
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const CouponManager: React.FC = () => {
+  const { user } = useAuth();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -30,20 +32,50 @@ export const CouponManager: React.FC = () => {
   });
 
   useEffect(() => {
-    loadCoupons();
-  }, []);
+    console.log('CouponManager: Component mounted, user:', user);
+    if (user) {
+      console.log('CouponManager: User is admin:', user.isAdmin);
+      console.log('CouponManager: User ID:', user.id);
+      console.log('CouponManager: User email:', user.email);
+      loadCoupons();
+    } else {
+      console.log('CouponManager: No user found');
+    }
+  }, [user]);
 
   const loadCoupons = async () => {
     try {
+      console.log('CouponManager: Loading coupons...');
+      
+      // First, let's check if the user is actually an admin in the database
+      if (user) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('id, email, is_admin')
+          .eq('id', user.id)
+          .single();
+        
+        if (userError) {
+          console.error('CouponManager: Error checking user admin status:', userError);
+        } else {
+          console.log('CouponManager: User admin status from DB:', userData);
+        }
+      }
+      
       const { data, error } = await supabase
         .from('coupons')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('CouponManager: Error loading coupons:', error);
+        throw error;
+      }
+      console.log('CouponManager: Coupons loaded successfully:', data);
       setCoupons(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des coupons:', error);
+      alert(`Erreur lors du chargement des coupons: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -53,6 +85,7 @@ export const CouponManager: React.FC = () => {
     e.preventDefault();
     
     try {
+      console.log('CouponManager: Submitting coupon data:', formData);
       const couponData = {
         code: formData.code.toUpperCase(),
         discount_percent: formData.discount_percent,
@@ -62,18 +95,28 @@ export const CouponManager: React.FC = () => {
       };
 
       if (editingCoupon) {
+        console.log('CouponManager: Updating coupon:', editingCoupon.id);
         const { error } = await supabase
           .from('coupons')
           .update(couponData)
           .eq('id', editingCoupon.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('CouponManager: Error updating coupon:', error);
+          throw error;
+        }
+        console.log('CouponManager: Coupon updated successfully');
       } else {
+        console.log('CouponManager: Creating new coupon');
         const { error } = await supabase
           .from('coupons')
           .insert(couponData);
 
-        if (error) throw error;
+        if (error) {
+          console.error('CouponManager: Error creating coupon:', error);
+          throw error;
+        }
+        console.log('CouponManager: Coupon created successfully');
       }
 
       // Reset form
@@ -90,7 +133,7 @@ export const CouponManager: React.FC = () => {
       loadCoupons();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du coupon:', error);
-      alert('Erreur lors de la sauvegarde du coupon');
+      alert(`Erreur lors de la sauvegarde du coupon: ${error.message}`);
     }
   };
 
@@ -107,15 +150,21 @@ export const CouponManager: React.FC = () => {
 
   const handleToggleActive = async (coupon: Coupon) => {
     try {
+      console.log('CouponManager: Toggling active status for coupon:', coupon.id, 'from', coupon.is_active, 'to', !coupon.is_active);
       const { error } = await supabase
         .from('coupons')
         .update({ is_active: !coupon.is_active })
         .eq('id', coupon.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('CouponManager: Error toggling coupon active status:', error);
+        throw error;
+      }
+      console.log('CouponManager: Coupon active status updated successfully');
       loadCoupons();
     } catch (error) {
       console.error('Erreur lors de la mise à jour du coupon:', error);
+      alert(`Erreur lors de la mise à jour du coupon: ${error.message}`);
     }
   };
 
@@ -123,15 +172,21 @@ export const CouponManager: React.FC = () => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce coupon ?')) return;
     
     try {
+      console.log('CouponManager: Deleting coupon:', couponId);
       const { error } = await supabase
         .from('coupons')
         .delete()
         .eq('id', couponId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('CouponManager: Error deleting coupon:', error);
+        throw error;
+      }
+      console.log('CouponManager: Coupon deleted successfully');
       loadCoupons();
     } catch (error) {
       console.error('Erreur lors de la suppression du coupon:', error);
+      alert(`Erreur lors de la suppression du coupon: ${error.message}`);
     }
   };
 
@@ -152,6 +207,16 @@ export const CouponManager: React.FC = () => {
         <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#10ac69] mx-auto"></div>
           <p className="mt-2 text-gray-600">Chargement des coupons...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!user || !user.isAdmin) {
+    return (
+      <Card>
+        <div className="text-center py-8">
+          <p className="text-red-600">Accès refusé. Vous devez être administrateur pour gérer les coupons.</p>
         </div>
       </Card>
     );

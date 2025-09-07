@@ -28,6 +28,7 @@ import { CartPage } from './pages/CartPage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { CheckoutSuccessPage } from './pages/CheckoutSuccessPage';
 import { AdminPage } from './pages/AdminPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 import { CartProvider } from './contexts/CartContext';
 
 // Component to determine which footer to show
@@ -118,6 +119,9 @@ const AppContent: React.FC = () => {
               </div>
             </ProtectedRoute>
           } />
+          
+          {/* 404 - Catch all route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       {isPublicRoute ? <Footer /> : <SimpleFooter />}

@@ -192,7 +192,69 @@ const PaymentForm: React.FC<StripePaymentFormProps> = ({
       }
       console.log('✅ Commande créée:', order);
 
-      // 2. Créer le PaymentIntent côté serveur
+      // 2. Gérer le paiement selon le montant
+      if (total === 0) {
+        // Commande gratuite (100% coupon) - pas besoin de Stripe
+        console.log('🎁 Commande gratuite détectée, finalisation directe...');
+        
+        // Mettre à jour la commande comme complétée
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ 
+            status: 'completed',
+            stripe_payment_intent_id: 'free_order'
+          })
+          .eq('id', order.id);
+
+        if (updateError) {
+          console.error('❌ Erreur mise à jour commande gratuite:', updateError);
+          throw updateError;
+        }
+        
+        console.log('✅ Commande gratuite finalisée');
+        
+        // Incrémenter l'usage du coupon si applicable
+        if (coupon?.id) {
+          console.log('📈 Incrémentation de l\'usage du coupon...');
+          const { error: couponError } = await supabase
+            .from('coupons')
+            .update({ usage_count: coupon.usage_count + 1 })
+            .eq('id', coupon.id);
+          
+          if (couponError) {
+            console.error('❌ Erreur incrémentation coupon:', couponError);
+            // Ne pas faire échouer la commande pour cette erreur
+          } else {
+            console.log('✅ Usage du coupon incrémenté');
+          }
+        }
+        
+        // Octroyer l'accès à l'utilisateur (1 an à partir de maintenant)
+        console.log('🔓 Octroi de l\'accès à l\'utilisateur...');
+        const accessExpiresAt = new Date();
+        accessExpiresAt.setFullYear(accessExpiresAt.getFullYear() + 1);
+        
+        const { error: accessError } = await supabase
+          .from('users')
+          .update({ 
+            has_access: true,
+            access_expires_at: accessExpiresAt.toISOString()
+          })
+          .eq('id', order.user_id);
+        
+        if (accessError) {
+          console.error('❌ Erreur octroi accès:', accessError);
+          // Ne pas faire échouer la commande pour cette erreur
+        } else {
+          console.log('✅ Accès octroyé à l\'utilisateur');
+        }
+        
+        // Appeler le callback de succès (redirects to dashboard)
+        onSuccess();
+        return;
+      }
+      
+      // Commande payante - créer le PaymentIntent Stripe
       console.log('💳 Appel de l\'Edge Function create-payment-intent...');
       
       const paymentData = {

@@ -158,7 +158,85 @@ Deno.serve(async (request) => {
             console.log('✅ Paiement enregistré avec succès')
           }
 
-          // Make.com integration removed as per request
+          // Déclencher le webhook Make.com
+          console.log('🔔 Déclenchement du webhook Make.com...')
+          try {
+            // Récupérer les détails de la commande pour le webhook
+            const { data: orderDetails, error: orderDetailsError } = await supabase
+              .from('orders')
+              .select(`
+                *,
+                users:user_id (
+                  id,
+                  email,
+                  name
+                )
+              `)
+              .eq('id', orderId)
+              .single()
+
+            if (orderDetailsError) {
+              console.error('❌ Erreur récupération détails commande pour webhook:', orderDetailsError)
+            } else {
+              // Déterminer le produit basé sur le montant total
+              const isPremiumPlan = orderDetails.total >= 600 // Plan Premium + Coaching
+              const productId = isPremiumPlan ? 'premium-coaching' : 'full-access'
+              
+              // Product configuration (centralized)
+              const PRODUCTS = {
+                'full-access': {
+                  name: 'Plan d\'accès complet',
+                  price: 1 // Updated from centralized config
+                },
+                'premium-coaching': {
+                  name: 'Plan Premium + Coaching', 
+                  price: 627 // Updated from centralized config
+                }
+              }
+              
+              const product = PRODUCTS[productId]
+              const productName = product.name
+              const productPrice = product.price
+
+              const makeWebhookPayload = {
+                orderId: orderId,
+                userId: orderDetails.user_id,
+                userEmail: orderDetails.users.email,
+                userName: orderDetails.users.name,
+                productId: productId,
+                productName: productName,
+                productPrice: productPrice,
+                totalAmount: orderDetails.total,
+                discountAmount: orderDetails.discount_amount || 0,
+                couponCode: orderDetails.coupon_id ? 'APPLIED' : null,
+                paymentIntentId: paymentIntent.id,
+                purchaseDate: new Date().toISOString()
+              }
+
+              console.log('📤 Payload Make.com webhook:', makeWebhookPayload)
+
+              // Appeler le webhook Make.com
+              const makeWebhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/make-webhook`
+              const makeResponse = await fetch(makeWebhookUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(makeWebhookPayload)
+              })
+
+              if (makeResponse.ok) {
+                console.log('✅ Webhook Make.com déclenché avec succès')
+              } else {
+                const errorText = await makeResponse.text()
+                console.error('❌ Erreur webhook Make.com:', makeResponse.status, errorText)
+              }
+            }
+          } catch (webhookError) {
+            console.error('❌ Erreur déclenchement webhook Make.com:', webhookError)
+            // Ne pas faire échouer le webhook Stripe principal si Make.com échoue
+          }
         }
         break
       }

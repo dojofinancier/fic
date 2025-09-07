@@ -25,13 +25,15 @@ export const CheckoutSuccessPage: React.FC = () => {
         <Card className="text-center py-12 mb-8">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-6" />
           <h1 className="text-3xl font-bold text-[#3b3b3b] mb-4">
-            Paiement réussi !
+            Commande finalisée avec succès !
           </h1>
           <p className="text-xl text-gray-600 mb-6">
             Félicitations ! Vous avez maintenant accès complet au Dojo Financier.
           </p>
           <p className="text-gray-600">
-            Un courriel de confirmation a été envoyé à <strong>{user?.email}</strong>
+            {user?.email && (
+              <>Un courriel de confirmation a été envoyé à <strong>{user.email}</strong></>
+            )}
           </p>
         </Card>
 

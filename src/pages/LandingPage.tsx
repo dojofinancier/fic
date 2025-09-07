@@ -160,7 +160,7 @@ export const LandingPage: React.FC = () => {
                 Commencez votre parcours
               </Button>
               <Link to="/login">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-[#063D3A]">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-black">
                   Me connecter
                 </Button>
               </Link>

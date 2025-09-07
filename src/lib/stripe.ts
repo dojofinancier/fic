@@ -25,7 +25,11 @@ stripePromise.then(
   }
 );
 
-export const PRODUCT_PRICE = 197; // Prix en dollars
+// Import product configuration
+import { PRODUCTS } from '../config/products';
+
+// For backward compatibility - use the full access product price
+export const PRODUCT_PRICE = PRODUCTS['full-access'].price;
 
 export const formatPrice = (amount: number): string => {
   return new Intl.NumberFormat('fr-CA', {

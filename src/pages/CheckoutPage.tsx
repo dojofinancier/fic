@@ -8,6 +8,7 @@ import { StripePaymentForm } from '../components/checkout/StripePaymentForm';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { formatPrice, stripePromise } from '../lib/stripe';
+import { supabase } from '../lib/supabase';
 import { 
   CreditCard, 
   Lock, 
@@ -128,6 +129,126 @@ export const CheckoutPage: React.FC = () => {
     navigate('/dashboard');
   };
 
+  const handleFreeOrder = async () => {
+    setLoading(true);
+    setPaymentError('');
+    
+    try {
+      let userId = user?.id;
+      
+      // Create account if user doesn't exist (same as regular orders)
+      if (!user) {
+        console.log('👤 Création du compte utilisateur...');
+        try {
+          await register(
+            billingInfo.email, 
+            password, 
+            `${billingInfo.firstName} ${billingInfo.lastName}`
+          );
+          
+          // Wait for the auth state to update
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Get the current user after registration
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          userId = newUser?.id;
+          
+          if (!userId) {
+            // Try to get user from session as fallback
+            const { data: { session } } = await supabase.auth.getSession();
+            userId = session?.user?.id;
+          }
+          
+          if (!userId) {
+            throw new Error('Impossible de récupérer l\'ID utilisateur après la création du compte');
+          }
+          
+          console.log('✅ Compte utilisateur créé:', userId);
+        } catch (registerError) {
+          console.error('❌ Erreur création compte:', registerError);
+          throw new Error('Erreur lors de la création du compte: ' + (registerError instanceof Error ? registerError.message : 'Erreur inconnue'));
+        }
+      }
+      
+      if (!userId) {
+        throw new Error('Aucun utilisateur identifié pour cette commande');
+      }
+      
+      // Create the order in Supabase
+      const orderData = {
+        user_id: userId,
+        subtotal: subtotal,
+        discount_amount: discountAmount,
+        total: total,
+        coupon_id: coupon?.id || null,
+        status: 'completed',
+        stripe_payment_intent_id: 'free_order'
+      };
+
+      console.log('📝 Création de la commande avec les données:', orderData);
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error('❌ Erreur création commande gratuite:', orderError);
+        throw orderError;
+      }
+      
+      console.log('✅ Commande gratuite créée:', order);
+      
+      // Increment coupon usage if applicable
+      if (coupon?.id) {
+        console.log('📈 Incrémentation de l\'usage du coupon...');
+        const { error: couponError } = await supabase
+          .from('coupons')
+          .update({ usage_count: coupon.usage_count + 1 })
+          .eq('id', coupon.id);
+        
+        if (couponError) {
+          console.error('❌ Erreur incrémentation coupon:', couponError);
+          // Don't fail the order for this error
+        } else {
+          console.log('✅ Usage du coupon incrémenté');
+        }
+      }
+      
+      // Grant access to the user (1 year from now)
+      console.log('🔓 Octroi de l\'accès à l\'utilisateur...');
+      const accessExpiresAt = new Date();
+      accessExpiresAt.setFullYear(accessExpiresAt.getFullYear() + 1);
+      
+      const { error: accessError } = await supabase
+        .from('users')
+        .update({ 
+          has_access: true,
+          access_expires_at: accessExpiresAt.toISOString()
+        })
+        .eq('id', userId);
+      
+      if (accessError) {
+        console.error('❌ Erreur octroi accès:', accessError);
+        // Don't fail the order for this error
+      } else {
+        console.log('✅ Accès octroyé à l\'utilisateur');
+      }
+      
+      // Clear cart and navigate to dashboard (same as regular orders)
+      clearCart();
+      setPaymentSuccess(true);
+      navigate('/dashboard');
+      
+    } catch (error) {
+      console.error('❌ Erreur commande gratuite:', error);
+      setPaymentError(error instanceof Error ? error.message : 'Erreur lors de la finalisation de la commande gratuite');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePaymentError = (error: string) => {
     setPaymentError(error);
     setLoading(false);
@@ -139,6 +260,8 @@ export const CheckoutPage: React.FC = () => {
                         billingInfo.postalCode;
                         
   const isAccountValid = user || (password && confirmPassword && password === confirmPassword);
+  
+  // Same validation for all orders - require both billing and account info
   const isFormValid = isBillingValid && isAccountValid;
 
   if (items.length === 0) {
@@ -272,20 +395,44 @@ export const CheckoutPage: React.FC = () => {
               {/* Informations de paiement */}
               {isFormValid ? (
                 <div>
-                  {console.log('🛒 CheckoutPage: Rendering Stripe Elements, stripePromise:', stripePromise)}
-                  {stripePromise ? (
-                    <Elements stripe={stripePromise}>
-                      <StripePaymentForm
-                        billingInfo={billingInfo}
-                        password={password}
-                        confirmPassword={confirmPassword}
-                        setAccountError={setAccountError}
-                        onSuccess={handlePaymentSuccess}
-                        onError={handlePaymentError}
-                        refreshUserProfile={refreshUserProfile}
-                      />
-                    </Elements>
+                  {total === 0 ? (
+                    // Commande gratuite - pas besoin de Stripe
+                    <Card className="bg-green-50 border-green-200">
+                      <div className="text-center py-8">
+                        <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-green-800 mb-2">
+                          Commande gratuite !
+                        </h3>
+                        <p className="text-green-600 mb-4">
+                          Votre coupon de 100% de réduction a été appliqué. Aucun paiement requis.
+                        </p>
+                        <Button 
+                          onClick={handleFreeOrder}
+                          className="bg-green-600 hover:bg-green-700"
+                          size="lg"
+                          disabled={loading}
+                        >
+                          {loading ? 'Finalisation...' : 'Finaliser la commande gratuite'}
+                        </Button>
+                      </div>
+                    </Card>
                   ) : (
+                    // Commande payante - utiliser Stripe
+                    <>
+                      {console.log('🛒 CheckoutPage: Rendering Stripe Elements, stripePromise:', stripePromise)}
+                      {stripePromise ? (
+                        <Elements stripe={stripePromise}>
+                          <StripePaymentForm
+                            billingInfo={billingInfo}
+                            password={password}
+                            confirmPassword={confirmPassword}
+                            setAccountError={setAccountError}
+                            onSuccess={handlePaymentSuccess}
+                            onError={handlePaymentError}
+                            refreshUserProfile={refreshUserProfile}
+                          />
+                        </Elements>
+                      ) : (
                     <Card className="bg-yellow-50 border-yellow-200">
                       <div className="text-center py-8">
                         <div className="text-yellow-500 text-6xl mb-4">⚠️</div>
@@ -314,6 +461,8 @@ export const CheckoutPage: React.FC = () => {
                         </div>
                       </div>
                     </Card>
+                      )}
+                    </>
                   )}
                 </div>
               ) : (

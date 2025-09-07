@@ -27,12 +27,35 @@ export const SessionMonitor: React.FC = () => {
         
         // If we have a session but no user profile, try to refresh
         if (session?.user && !user && !isRefreshing.current) {
-          console.log('SessionMonitor: Session exists but no user profile, refreshing...');
+          console.log('📡 SessionMonitor: Session exists but no user profile, refreshing...');
+          console.log('📡 SessionMonitor: Session user ID:', session.user.id);
+          console.log('📡 SessionMonitor: Current user state:', user ? 'exists' : 'null');
           isRefreshing.current = true;
           try {
             await refreshUserProfile();
+            console.log('📡 SessionMonitor: Profile refresh completed');
           } finally {
             isRefreshing.current = false;
+            console.log('📡 SessionMonitor: Refresh flag cleared');
+          }
+        }
+        
+        // Check for token expiration
+        if (session?.user && user) {
+          if (session.expires_at && new Date(session.expires_at) < new Date()) {
+            console.log('📡 SessionMonitor: Token expired, attempting refresh...');
+            try {
+              const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+              
+              if (refreshError) {
+                console.log('📡 SessionMonitor: Token refresh failed, user will need to log in again');
+                // Don't clear user state here - let the user continue until they try to use the app
+              } else {
+                console.log('📡 SessionMonitor: Token refreshed successfully');
+              }
+            } catch (error) {
+              console.log('📡 SessionMonitor: Token refresh error:', error);
+            }
           }
         }
         
@@ -52,7 +75,7 @@ export const SessionMonitor: React.FC = () => {
       } catch (error) {
         console.warn('SessionMonitor: Error checking session health:', error);
       }
-    }, 30000); // Check every 30 seconds
+    }, 60000); // Check every 60 seconds
 
     return () => {
       events.forEach(event => {

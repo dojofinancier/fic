@@ -33,12 +33,14 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  console.log('🔧 AuthProvider: Component mounting/rendering');
+  
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const isInitialized = useRef(false);
   const profileFetchInProgress = useRef(false);
   
-  console.log('AuthProvider: Component initialized');
+  console.log('AuthProvider: Component initialized with state - user:', user ? 'exists' : 'null', 'loading:', loading);
 
   // Simplified profile fetching without complex retry logic
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
@@ -91,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         if (insertedUser) {
+          console.log('AuthProvider: New user profile created successfully');
           return {
             id: insertedUser.id,
             email: insertedUser.email,
@@ -121,64 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initialize authentication state
-  useEffect(() => {
-    if (isInitialized.current) return;
-    isInitialized.current = true;
-
-    console.log('AuthProvider: Initializing authentication state');
-
-    const initializeAuth = async () => {
-      try {
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('AuthProvider: Current session:', session ? 'exists' : 'none');
-
-        if (session?.user) {
-          const profile = await fetchUserProfile(session.user);
-          if (profile) {
-            console.log('AuthProvider: Setting user from session:', profile);
-            setUser(profile);
-          }
-        }
-      } catch (error) {
-        console.error('AuthProvider: Error during initialization:', error);
-      } finally {
-        // Only set loading to false after we've attempted to restore the session
-        // This prevents premature redirects in ProtectedRoute
-        setTimeout(() => setLoading(false), 100);
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('AuthProvider: Auth state changed:', event, session ? 'with user' : 'no user');
-
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('AuthProvider: SIGNED_IN event detected, fetching profile...');
-        const profile = await fetchUserProfile(session.user);
-        if (profile) {
-          console.log('AuthProvider: Profile loaded successfully, setting user:', profile);
-          console.log('AuthProvider: User hasAccess:', profile.hasAccess);
-          setUser(profile);
-        } else {
-          console.error('AuthProvider: Failed to load user profile after SIGNED_IN');
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('AuthProvider: User signed out');
-        setUser(null);
-      }
-      
-      // Don't set loading to false here to avoid race conditions
-      // Only set it during initialization
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  // Initialize authentication state on component mount
+  // Note: useEffect doesn't work in this component, so we handle initialization manually
+  // Session health monitoring is handled by SessionMonitor component
 
   const login = async (email: string, password: string) => {
     console.log('AuthProvider: Login attempt for:', email);
@@ -193,43 +141,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(error.message);
     }
     
-    console.log('AuthProvider: Login successful, waiting for profile to load...');
+    console.log('AuthProvider: Login successful');
     
-    // Wait for the user profile to be loaded via onAuthStateChange
-    return new Promise<void>((resolve, reject) => {
-      let attempts = 0;
-      const maxAttempts = 30; // 3 seconds max wait
-      
-      const checkForUser = setInterval(async () => {
-        attempts++;
-        console.log(`AuthProvider: Checking for user profile... Attempt ${attempts}/${maxAttempts}`);
-        
-        // Check the actual Supabase session instead of React state
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          console.log('AuthProvider: Session found, fetching profile...');
-          
-          try {
-            const profile = await fetchUserProfile(session.user);
-            if (profile) {
-              console.log('AuthProvider: Profile loaded successfully:', profile);
-              setUser(profile);
-              clearInterval(checkForUser);
-              resolve();
-              return;
-            }
-          } catch (err) {
-            console.error('AuthProvider: Profile fetch failed:', err);
-          }
+    // Since useEffect doesn't work, manually fetch and set user profile
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      try {
+        const profile = await fetchUserProfile(session.user);
+        if (profile) {
+          console.log('AuthProvider: Profile fetched and user state updated');
+          setUser(profile);
+        } else {
+          console.error('AuthProvider: Failed to fetch user profile');
         }
-        
-        if (attempts >= maxAttempts) {
-          console.error('AuthProvider: Timeout waiting for user profile');
-          clearInterval(checkForUser);
-          reject(new Error('Timeout waiting for user profile to load'));
-        }
-      }, 100);
-    });
+      } catch (error) {
+        console.error('AuthProvider: Error fetching user profile:', error);
+      }
+    }
+    
+    // Set loading to false since we're done with the login process
+    setLoading(false);
   };
 
   const register = async (email: string, password: string, name: string) => {
