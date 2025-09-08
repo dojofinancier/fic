@@ -210,7 +210,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const profile = await fetchUserProfile(session.user);
       if (profile) {
         setUser(profile);
+        setLoading(false); // Set loading to false when profile is successfully loaded
+        console.log('AuthProvider: User profile refreshed and loading set to false');
       }
+    } else {
+      // No session found, set loading to false
+      setLoading(false);
+      console.log('AuthProvider: No session found, loading set to false');
     }
   };
 

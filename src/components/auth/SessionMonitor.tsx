@@ -9,6 +9,38 @@ export const SessionMonitor: React.FC = () => {
   const isRefreshing = useRef(false);
 
   useEffect(() => {
+    // Immediate session check on mount (before 60-second interval)
+    const checkSessionImmediately = async () => {
+      try {
+        console.log('📡 SessionMonitor: Running immediate session check on mount...');
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // If we have a session but no user profile, try to refresh immediately
+        if (session?.user && !user && !isRefreshing.current) {
+          console.log('📡 SessionMonitor: Immediate check - Session exists but no user profile, refreshing...');
+          console.log('📡 SessionMonitor: Immediate check - Session user ID:', session.user.id);
+          console.log('📡 SessionMonitor: Immediate check - Current user state:', user ? 'exists' : 'null');
+          isRefreshing.current = true;
+          try {
+            await refreshUserProfile();
+            console.log('📡 SessionMonitor: Immediate check - Profile refresh completed');
+          } finally {
+            isRefreshing.current = false;
+            console.log('📡 SessionMonitor: Immediate check - Refresh flag cleared');
+          }
+        } else if (session?.user && user) {
+          console.log('📡 SessionMonitor: Immediate check - Session and user profile both exist');
+        } else {
+          console.log('📡 SessionMonitor: Immediate check - No session found');
+        }
+      } catch (error) {
+        console.warn('📡 SessionMonitor: Immediate check - Error:', error);
+      }
+    };
+
+    // Run immediate check
+    checkSessionImmediately();
+
     // Track user activity
     const updateActivity = () => {
       lastActivity.current = Date.now();
@@ -20,7 +52,7 @@ export const SessionMonitor: React.FC = () => {
       document.addEventListener(event, updateActivity, true);
     });
 
-    // Set up session health check
+    // Set up session health check (60-second interval for ongoing monitoring)
     sessionCheckInterval.current = setInterval(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
