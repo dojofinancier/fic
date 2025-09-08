@@ -182,6 +182,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     console.log('AuthProvider: Registration successful');
+    
+    // Since useEffect doesn't work, manually fetch and set user profile
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      try {
+        const profile = await fetchUserProfile(session.user);
+        if (profile) {
+          console.log('AuthProvider: Profile fetched and user state updated after registration');
+          setUser(profile);
+        } else {
+          console.error('AuthProvider: Failed to fetch user profile after registration');
+        }
+      } catch (error) {
+        console.error('AuthProvider: Error fetching user profile after registration:', error);
+      }
+    }
+    
+    // Set loading to false since we're done with the registration process
+    setLoading(false);
   };
 
   const refreshUserProfile = async () => {

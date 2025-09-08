@@ -47,7 +47,10 @@ Deno.serve(async (request) => {
 
     // Validation des données requises
     const requiredFields = ['orderId', 'userId', 'userEmail', 'productName', 'productPrice', 'totalAmount', 'paymentIntentId']
-    const missingFields = requiredFields.filter(field => !payload[field as keyof MakeWebhookPayload])
+    const missingFields = requiredFields.filter(field => {
+      const value = payload[field as keyof MakeWebhookPayload]
+      return value === undefined || value === null || value === ''
+    })
     
     if (missingFields.length > 0) {
       console.error('❌ Champs manquants:', missingFields)

@@ -234,7 +234,66 @@ export const CheckoutPage: React.FC = () => {
         // Don't fail the order for this error
       } else {
         console.log('✅ Accès octroyé à l\'utilisateur');
+        
+        // Rafraîchir le contexte auth pour refléter has_access
+        try {
+          await refreshUserProfile();
+          console.log('✅ Profil utilisateur rafraîchi après octroi d\'accès');
+        } catch (e) {
+          console.warn('⚠️ Rafraîchissement du profil non critique a échoué:', e);
+        }
       }
+      
+      // Déclencher le webhook Make.com pour les commandes gratuites (asynchrone)
+      console.log('🔔 Mise en file d\'attente du webhook Make.com pour commande gratuite...')
+      
+      // Fonction pour traiter le webhook Make.com de manière asynchrone
+      const processFreeOrderWebhook = async () => {
+        try {
+          console.log('🔔 Traitement du webhook Make.com pour commande gratuite...')
+          
+          const makeWebhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/make-webhook`
+          const makeWebhookPayload = {
+            orderId: order.id,
+            userId: userId,
+            userEmail: billingInfo.email,
+            userName: `${billingInfo.firstName} ${billingInfo.lastName}`,
+            productId: 'full-access', // Default for free orders, could be determined by order amount
+            productName: 'Plan d\'accès complet',
+            productPrice: subtotal,
+            totalAmount: total,
+            discountAmount: discountAmount,
+            couponCode: coupon?.code || null,
+            paymentIntentId: 'free_order',
+            purchaseDate: new Date().toISOString()
+          }
+          
+          console.log('📤 Payload Make.com webhook (commande gratuite):', makeWebhookPayload)
+          
+          const response = await fetch(makeWebhookUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(makeWebhookPayload)
+          })
+          
+          if (response.ok) {
+            console.log('✅ Webhook Make.com déclenché avec succès pour commande gratuite')
+          } else {
+            const errorText = await response.text()
+            console.error('❌ Erreur webhook Make.com pour commande gratuite:', response.status, errorText)
+          }
+        } catch (webhookError) {
+          console.error('❌ Erreur déclenchement webhook Make.com pour commande gratuite:', webhookError)
+        }
+      }
+      
+      // Lancer le webhook Make.com de manière asynchrone (non-bloquant)
+      setTimeout(processFreeOrderWebhook, 1000) // 1 seconde de délai
+      
+      console.log('✅ Webhook Make.com mis en file d\'attente pour commande gratuite, traitement principal terminé')
       
       // Clear cart and navigate to dashboard (same as regular orders)
       clearCart();

@@ -158,28 +158,47 @@ Deno.serve(async (request) => {
             console.log('✅ Paiement enregistré avec succès')
           }
 
-          // Déclencher le webhook Make.com
-          console.log('🔔 Déclenchement du webhook Make.com...')
-          try {
-            // Récupérer les détails de la commande pour le webhook
-            const { data: orderDetails, error: orderDetailsError } = await supabase
-              .from('orders')
-              .select(`
-                *,
-                users:user_id (
-                  id,
-                  email,
-                  name
-                )
-              `)
-              .eq('id', orderId)
-              .single()
+          // Déclencher le webhook Make.com de manière asynchrone
+          console.log('🔔 Mise en file d\'attente du webhook Make.com...')
+          
+          // Fonction pour traiter le webhook Make.com de manière asynchrone
+          const processMakeWebhook = async () => {
+            try {
+              console.log('🔔 Traitement du webhook Make.com...')
+              
+              // Récupérer les détails de la commande pour le webhook
+              const { data: orderDetails, error: orderDetailsError } = await supabase
+                .from('orders')
+                .select('*')
+                .eq('id', orderId)
+                .single()
 
-            if (orderDetailsError) {
-              console.error('❌ Erreur récupération détails commande pour webhook:', orderDetailsError)
-            } else {
+              if (orderDetailsError) {
+                console.error('❌ Erreur récupération détails commande pour webhook:', orderDetailsError)
+                return
+              }
+
+              // Récupérer les détails de l'utilisateur séparément
+              console.log('🔍 Récupération des détails de l\'utilisateur...')
+              const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('id, email, name')
+                .eq('id', orderDetails.user_id)
+                .single()
+
+              if (userError) {
+                console.error('❌ Erreur récupération utilisateur pour webhook:', userError)
+                return
+              }
+
+              // Combiner les données
+              const combinedOrderData = {
+                ...orderDetails,
+                users: userData
+              }
+
               // Déterminer le produit basé sur le montant total
-              const isPremiumPlan = orderDetails.total >= 600 // Plan Premium + Coaching
+              const isPremiumPlan = combinedOrderData.total >= 600 // Plan Premium + Coaching
               const productId = isPremiumPlan ? 'premium-coaching' : 'full-access'
               
               // Product configuration (centralized)
@@ -200,15 +219,15 @@ Deno.serve(async (request) => {
 
               const makeWebhookPayload = {
                 orderId: orderId,
-                userId: orderDetails.user_id,
-                userEmail: orderDetails.users.email,
-                userName: orderDetails.users.name,
+                userId: combinedOrderData.user_id,
+                userEmail: combinedOrderData.users.email,
+                userName: combinedOrderData.users.name,
                 productId: productId,
                 productName: productName,
                 productPrice: productPrice,
-                totalAmount: orderDetails.total,
-                discountAmount: orderDetails.discount_amount || 0,
-                couponCode: orderDetails.coupon_id ? 'APPLIED' : null,
+                totalAmount: combinedOrderData.total,
+                discountAmount: combinedOrderData.discount_amount || 0,
+                couponCode: combinedOrderData.coupon_id ? 'APPLIED' : null,
                 paymentIntentId: paymentIntent.id,
                 purchaseDate: new Date().toISOString()
               }
@@ -232,11 +251,15 @@ Deno.serve(async (request) => {
                 const errorText = await makeResponse.text()
                 console.error('❌ Erreur webhook Make.com:', makeResponse.status, errorText)
               }
+            } catch (webhookError) {
+              console.error('❌ Erreur déclenchement webhook Make.com:', webhookError)
             }
-          } catch (webhookError) {
-            console.error('❌ Erreur déclenchement webhook Make.com:', webhookError)
-            // Ne pas faire échouer le webhook Stripe principal si Make.com échoue
           }
+
+          // Lancer le webhook Make.com de manière asynchrone (non-bloquant)
+          setTimeout(processMakeWebhook, 1000) // 1 seconde de délai
+          
+          console.log('✅ Webhook Make.com mis en file d\'attente, traitement principal terminé')
         }
         break
       }
