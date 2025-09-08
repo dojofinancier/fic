@@ -38,7 +38,7 @@ export const PRODUCTS: Record<string, Product> = {
     id: 'premium-coaching',
     name: 'Plan Premium + Coaching',
     description: 'Accès complet + 6h de coaching privé avec un professionnel',
-    price: 2,
+    price: 627,
     currency: 'CAD',
     badge: 'Coaching inclus',
     features: [
